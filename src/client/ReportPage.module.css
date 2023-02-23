@@ -133,19 +133,19 @@
 }
 
 .keplerBlock :global #kepler-gl__kepler .side-panel__header__top {
-    /* display: none; */
+    display: none;
 }
 
 .keplerBlock :global #kepler-gl__kepler .add-data-button {
-    /* display: none; */
+    display: none;
 }
 
 .keplerBlock :global #kepler-gl__kepler .remove-dataset {
-    /* display: none; */
+    display: none;
 }
 
 .keplerBlock :global #kepler-gl__kepler .map-control-button[data-for=locale] {
-    /* display: none; */
+    display: none;
 }
 
 .readOnly span {
