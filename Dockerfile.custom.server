@@ -1,0 +1,27 @@
+
+
+# syntax=docker/dockerfile:1
+
+
+FROM custom_dekart_server AS server
+
+
+
+FROM google/cloud-sdk:latest
+
+WORKDIR /dekart
+
+RUN apt-get update
+RUN apt-get install wget -y
+
+RUN curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0/cloud-sql-proxy.linux.amd64
+RUN chmod +x cloud-sql-proxy
+
+COPY . /dekart
+COPY --from=server /dekart /dekart
+
+CMD ["bash", "/dekart/server.sh" ]
+
+
+
+
