@@ -3,7 +3,7 @@
 
 
 
-/dekart/cloud-sql-proxy ppt-personal-project:us-central1:dekart & /dekart/server
+/dekart/cloud-sql-proxy ${INSTANCE_CONNECTION_NAME} & /dekart/server
 
 
 
