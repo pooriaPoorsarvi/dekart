@@ -1,0 +1,38 @@
+# https://cloud.google.com/appengine/docs/flexible/custom-runtimes/configuring-your-app-with-app-yaml#intro
+service: default
+runtime: custom
+env: flex
+# service: dekart-service
+service_account: $DEKART_SERVICE_ACCOUNT
+
+
+manual_scaling:
+   instances: 1 # important as dekart designed to work on single instance
+
+resources:
+   memory_gb: 2.0 # recommended to handle up to 1M points
+
+env_variables:
+  DEKART_LOG_DEBUG: "1"
+  DEKART_POSTGRES_DB: "$DEKART_POSTGRES_DB"
+  DEKART_POSTGRES_USER: "$DEKART_POSTGRES_USER"
+  DEKART_POSTGRES_PASSWORD: "$DEKART_POSTGRES_PASSWORD"
+  DEKART_POSTGRES_PORT: "$DEKART_POSTGRES_PORT"
+  # see https://cloud.google.com/sql/docs/mysql/connect-app-engine-flexible
+#   DEKART_POSTGRES_HOST: "172.17.0.1"
+  DEKART_POSTGRES_HOST: "localhost"
+  DEKART_CLOUD_STORAGE_BUCKET: "$DEKART_CLOUD_STORAGE_BUCKET"
+  DEKART_BIGQUERY_PROJECT_ID: "$DEKART_BIGQUERY_PROJECT_ID"
+  DEKART_BIGQUERY_MAX_BYTES_BILLED: "53687091200"
+  DEKART_MAPBOX_TOKEN: "$DEKART_MAPBOX_TOKEN"
+  DEKART_CORS_ORIGIN: "$DEKART_CORS_ORIGIN"
+  INSTANCE_CONNECTION_NAME: "$INSTANCE_CONNECTION_NAME"
+  DEKART_STATIC_FILES: "$DEKART_STATIC_FILES"
+  DEKART_PORT: "$DEKART_PORT"
+  DEKART_IAP_JWT_AUD: "$DEKART_IAP_JWT_AUD"
+  DEKART_REQUIRE_IAP: "DEKART_REQUIRE_IAP"
+  
+
+beta_settings:
+  # see https://cloud.google.com/sql/docs/mysql/connect-app-engine-flexible
+   cloud_sql_instances: "$INSTANCE_CONNECTION_NAME=tcp:5432"
