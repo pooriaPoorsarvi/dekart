@@ -79,14 +79,30 @@ func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 		log.Info().Msgf(err.Error())
 	}
 
+	// Create an OAuth2 configuration with the same values as the one used to obtain the access token
+	conf := &oauth2.Config{
+		ClientID:     "197398309945-ostmrt571il6vtgvd0mdceaccmhdmji8.apps.googleusercontent.com",
+		ClientSecret: "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",
+		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
+		Endpoint: google.Endpoint,
+		RedirectURL: "http://localhost:8080/api/v1//callback-authenticate-oauth2",
+	}
 
-	token := new(oauth2.Token)
-	token.AccessToken = userToken.AccessToken
-	token.RefreshToken = userToken.RefreshToken
-	token.Expiry = userToken.Expiry
-	token.TokenType = userToken.TokenType
+	// Use the refresh token to obtain a new access token
+	tokenSource := conf.TokenSource(context.Background(), &oauth2.Token{RefreshToken: userToken.RefreshToken})
+	newToken, err := tokenSource.Token()
+	if err != nil {
+		log.Info().Msgf("Failed to refresh token: %v", err)
+		return nil, err
+	}
 
-	return token, err
+	// Update the access token and expiry time in the database
+	sqlStatement = `UPDATE user_token SET access_token=$1, expiry=$2 WHERE id=$3`
+	_, err = s.db.Exec(sqlStatement, newToken.AccessToken, newToken.Expiry, userEmail)
+	if err != nil {
+		log.Info().Msgf("Failed to update token in database: %v", err)
+		return nil, err
+	}
 
-
+	return newToken, nil
 }
