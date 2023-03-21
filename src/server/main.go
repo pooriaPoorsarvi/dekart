@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"dekart/src/server/apiBqjob"
 	"dekart/src/server/app"
 	"dekart/src/server/athenajob"
 	"dekart/src/server/bqjob"
@@ -115,8 +116,13 @@ func configureJobStore(bucket storage.Storage) job.Store {
 		log.Info().Msg("Using Athena Datasource backend")
 		jobStore = athenajob.NewStore(bucket)
 	case "BQ", "":
-		log.Info().Msg("Using BigQuery Datasource backend")
-		jobStore = bqjob.NewStore()
+		if os.Getenv("DEKART_DATASOURCE_CLIENT") == "API"{
+			log.Info().Msg("Using BigQuery V2 Datasource backend")
+			jobStore = apiBqjob.NewStore()
+		}else{
+			log.Info().Msg("Using BigQuery Datasource backend")
+			jobStore = bqjob.NewStore()
+		}
 	default:
 		log.Fatal().Str("DEKART_STORAGE", os.Getenv("DEKART_STORAGE")).Msg("Unknown storage backend")
 	}

@@ -86,7 +86,7 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 		ClientSecret: "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",
 		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
 		Endpoint: google.Endpoint,
-		RedirectURL: "http://localhost:8080/api/v1//callback-authenticate-oauth2",
+		RedirectURL: "http://localhost:8080/api/v1/callback-authenticate-oauth2",
 	}
 
 
@@ -124,8 +124,8 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 			return
 		}
 
-		dekartServer.SaveToken(r.Context(), r.URL.Query().Get("code"), r.URL.Query().Get("state"))
-		http.Redirect(w, r, "http://localhost:3000/", http.StatusSeeOther)
+		dekartServer.SaveToken(r.URL.Query().Get("code"), r.URL.Query().Get("state"))
+		http.Redirect(w, r, "http://localhost:8080/", http.StatusSeeOther)
 
 
 	}).Methods("POST", "GET", "OPTIONS")

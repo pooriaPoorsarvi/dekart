@@ -242,6 +242,9 @@ func (s Server) RunQuery(ctx context.Context, req *proto.RunQueryRequest) (*prot
 	if err == nil {
 		job.SetToken(token)
 	// 	job.SetCtx(context.WithValue(ctx, "GCP_TOKEN", *token))
+	}else{
+		log.Err(err)
+		return nil, err
 	}
 	// log.Debug().Msg("Setting token")
 	// log.Print(token)
