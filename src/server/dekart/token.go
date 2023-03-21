@@ -3,60 +3,82 @@ package dekart
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/bigquery/v2"
 	GcpOauth "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
+	"strings"
 	"time"
 )
 
-func (s Server) SaveToken(ctx context.Context, code string, state string) error{
+
+func (s Server) SaveToken(ctx context.Context, code string, state string) error {
 
 	conf := &oauth2.Config{
 		ClientID:     "197398309945-ostmrt571il6vtgvd0mdceaccmhdmji8.apps.googleusercontent.com",
 		ClientSecret: "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",
 		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
-		Endpoint: google.Endpoint,
-		RedirectURL: "http://localhost:8080/api/v1//callback-authenticate-oauth2",
-
+		Endpoint:     google.Endpoint,
+		RedirectURL:  "http://localhost:8080/api/v1/callback-authenticate-oauth2",
 	}
-
 
 	tok, err := conf.Exchange(ctx, code)
 	if err != nil {
 		log.Info().Err(err)
 		return err
-	} else {
+	}
 
-
-		client := conf.Client(ctx, tok)
-		service, err := GcpOauth.NewService(ctx, option.WithHTTPClient(client))
-		if err != nil {
-			log.Info().Msgf("err 3")
-			log.Info().Msgf(err.Error())
+	// Check if all the requested scopes have been granted
+	client := conf.Client(ctx, tok)
+	service, err := GcpOauth.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		log.Info().Msgf("err 3")
+		log.Info().Msgf(err.Error())
+		return err
+	}
+	tokenInfo, err := service.Tokeninfo().AccessToken(tok.AccessToken).Do()
+	if err != nil {
+		log.Info().Msgf("Failed to check token info: %v", err)
+		return err
+	}
+	grantedScopes := strings.Split(tokenInfo.Scope, " ")
+	for _, scope := range conf.Scopes {
+		if !contains(grantedScopes, scope) {
+			err := fmt.Errorf("scope '%s' not granted", scope)
+			log.Info().Err(err)
 			return err
 		}
-		userInfo, err := service.Userinfo.Get().Do()
-		if err != nil {
-			log.Print("got user error", err.Error())
-			return err
-		}
+	}
 
+	userInfo, err := service.Userinfo.Get().Do()
+	if err != nil {
+		log.Print("got user error", err.Error())
+		return err
+	}
 
-		sqlStatement := `INSERT INTO user_token (id, access_token, refresh_token, expiry, token_type)
+	sqlStatement := `INSERT INTO user_token (id, access_token, refresh_token, expiry, token_type)
                      VALUES ($1, $2, $3, $4, $5)`
-		_, err = s.db.Exec(sqlStatement, userInfo.Email, tok.AccessToken, tok.RefreshToken, tok.Expiry, tok.TokenType)
-		if err != nil {
-			log.Print("error saving token")
-			log.Info().Msgf(err.Error())
-		}
-
+	_, err = s.db.Exec(sqlStatement, userInfo.Email, tok.AccessToken, tok.RefreshToken, tok.Expiry, tok.TokenType)
+	if err != nil {
+		log.Print("error saving token")
+		log.Info().Msgf(err.Error())
 	}
 
 	return nil
 }
+
+func contains(scopes []string, scope string) bool {
+	for _, s := range scopes {
+		if s == scope {
+			return true
+		}
+	}
+	return false
+}
+
 
 func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 	type UserToken struct {
