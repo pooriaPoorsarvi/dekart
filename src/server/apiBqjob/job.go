@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"dekart/src/proto"
@@ -198,10 +199,14 @@ func (job *Job) wait() {
 	if queryStatus.Status == nil {
 		job.Logger.Fatal().Msgf("queryStatus == nil")
 	}
-	//if err := queryStatus.Status.Errors[0]; err != nil {
-	//	job.CancelWithError(errors.New(err.Reason))
-	//	return
-	//}
+	if queryStatus.Status != nil && queryStatus.Status.Errors != nil && len(queryStatus.Status.Errors) > 0 {
+		errorsString := []string{}
+		for i := 0; i < len(queryStatus.Status.Errors); i++ {
+			errorsString = append(errorsString, queryStatus.Status.Errors[i].Reason + " : " + queryStatus.Status.Errors[i].Message)
+		}
+		job.CancelWithError(errors.New(strings.Join(errorsString, ",")))
+		return
+	}
 
 	table, err := job.getResultTable()
 	if err != nil {
@@ -215,9 +220,7 @@ func (job *Job) wait() {
 		return
 	}
 
-	job.Logger.Debug().Msg("setting status")
-	//job.Status() <- int32(proto.Query_JOB_STATUS_READING_RESULTS)
-	job.Logger.Debug().Msg("going for read")
+	job.Status() <- int32(proto.Query_JOB_STATUS_READING_RESULTS)
 
 	csvRows := make(chan []string, job.TotalRows)
 	errors := make(chan error)
@@ -261,8 +264,6 @@ func (job *Job) setMaxReadStreamsCount(queryText string) {
 // Run implementation
 func (job *Job) Run(storageObject storage.StorageObject) error {
 	token := job.GetToken()
-	job.Logger.Debug().Msg("got token")
-	job.Logger.Debug().Msg(token.Expiry.String())
 	job.token = token
 	oauthClient := oauth2.NewClient(job.GetCtx(), oauth2.StaticTokenSource(job.token))
 	client, err := bigquery.NewService(job.GetCtx(), option.WithHTTPClient(oauthClient))
@@ -283,7 +284,6 @@ func (job *Job) Run(storageObject storage.StorageObject) error {
 		job.Logger.Err(err)
 		return err
 	}
-	//query.MaxBytesBilled = job.maxBytesBilled
 
 	job.setMaxReadStreamsCount(job.QueryText)
 
