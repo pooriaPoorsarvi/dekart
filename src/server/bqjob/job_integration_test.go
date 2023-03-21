@@ -77,7 +77,7 @@ func TestJob_getResultTable(t *testing.T) {
 		_, err = bqjob.Config()
 		require.NoError(t, err)
 
-		deakrtJob := &Job{
+		deakrtJob := &bqjob.Job{
 			BasicJob:    job.BasicJob{Logger: log},
 			bigqueryJob: bqjob,
 		}

@@ -3,15 +3,19 @@ package bqjob
 import (
 	"context"
 	"fmt"
+	"github.com/googleapis/gax-go/v2"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
 	"io"
 	"sync"
 
-	"cloud.google.com/go/bigquery"
 	bqStorage "cloud.google.com/go/bigquery/storage/apiv1"
-	gax "github.com/googleapis/gax-go/v2"
 	"github.com/rs/zerolog"
+	"google.golang.org/api/bigquery/v2"
 	bqStoragePb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1"
 	"google.golang.org/grpc"
+
+	"google.golang.org/grpc/credentials/oauth"
 )
 
 type Reader struct {
@@ -22,10 +26,11 @@ type Reader struct {
 	maxReadStreamsCount int32
 	tableDecoder        *Decoder
 	session             *bqStoragePb.ReadSession
+	token 				*oauth2.Token
 }
 
 // create new Reader
-func NewReader(ctx context.Context, errors chan error, csvRows chan []string, table *bigquery.Table, logger zerolog.Logger, maxReadStreamsCount int32) (*Reader, error) {
+func NewReader(ctx context.Context, token *oauth2.Token, errors chan error, csvRows chan []string, table *bigquery.Table, logger zerolog.Logger, maxReadStreamsCount int32) (*Reader, error) {
 	r := &Reader{
 		ctx:                 ctx,
 		table:               table,
@@ -33,19 +38,36 @@ func NewReader(ctx context.Context, errors chan error, csvRows chan []string, ta
 		maxReadStreamsCount: maxReadStreamsCount,
 	}
 	var err error
-	r.bqReadClient, err = bqStorage.NewBigQueryReadClient(r.ctx)
+
+
+	r.token = token
+	perRPCCreds := oauth.NewOauthAccess(r.token)
+
+
+	opts := []option.ClientOption{
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(perRPCCreds)),
+	}
+
+	r.bqReadClient, err = bqStorage.NewBigQueryReadClient(r.ctx, opts...)
 	if err != nil || r.bqReadClient == nil {
 		r.logger.Fatal().Err(err).Msg("cannot create bigquery read client")
 	}
+
+
+
+
+
+
 	createReadSessionRequest := &bqStoragePb.CreateReadSessionRequest{
-		Parent: "projects/" + r.table.ProjectID,
+		Parent: "projects/" + r.table.TableReference.ProjectId,
 		ReadSession: &bqStoragePb.ReadSession{
 			Table: fmt.Sprintf("projects/%s/datasets/%s/tables/%s",
-				r.table.ProjectID, r.table.DatasetID, r.table.TableID),
+				r.table.TableReference.ProjectId, r.table.TableReference.DatasetId, r.table.TableReference.TableId),
 			DataFormat: bqStoragePb.DataFormat_AVRO,
 		},
 		MaxStreamCount: r.maxReadStreamsCount,
 	}
+
 	r.session, err = r.bqReadClient.CreateReadSession(r.ctx, createReadSessionRequest, rpcOpts)
 	if err != nil {
 		//TODO: context canceled
@@ -111,10 +133,10 @@ func (r *Reader) newStreamReader(streamName string, csvRows chan []string, error
 	return &streamReader
 }
 
-func Read(ctx context.Context, errors chan error, csvRows chan []string, table *bigquery.Table, logger zerolog.Logger, maxReadStreamsCount int32) {
+func Read(ctx context.Context, token *oauth2.Token, errors chan error, csvRows chan []string, table *bigquery.Table, logger zerolog.Logger, maxReadStreamsCount int32) {
 	defer close(errors)
 	defer close(csvRows)
-	r, err := NewReader(ctx, errors, csvRows, table, logger, maxReadStreamsCount)
+	r, err := NewReader(ctx, token, errors, csvRows, table, logger, maxReadStreamsCount)
 	if err != nil {
 		errors <- err
 		return
@@ -149,6 +171,7 @@ func (r *StreamReader) readStream() {
 	r.logger.Debug().Msg("Start Reading Stream")
 	defer close(r.resCh)
 	defer r.logger.Debug().Msg("Finish Reading Stream")
+
 	rowStream, err := r.bqReadClient.ReadRows(r.ctx, &bqStoragePb.ReadRowsRequest{
 		ReadStream: r.streamName,
 	}, rpcOpts)

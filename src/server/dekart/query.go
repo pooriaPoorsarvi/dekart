@@ -237,6 +237,14 @@ func (s Server) RunQuery(ctx context.Context, req *proto.RunQueryRequest) (*prot
 		return nil, status.Error(code, err.Error())
 	}
 	job, jobStatus, err := s.jobs.Create(reportID, req.QueryId, req.QueryText)
+	// TODO : make this based on runner:
+	token, err := s.RetrieveToken(claims.Email)
+	if err == nil {
+		job.SetToken(token)
+	// 	job.SetCtx(context.WithValue(ctx, "GCP_TOKEN", *token))
+	}
+	// log.Debug().Msg("Setting token")
+	// log.Print(token)
 	log.Debug().Str("jobID", job.GetID()).Msg("Job created")
 	if err != nil {
 		log.Error().Err(err).Send()

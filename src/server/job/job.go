@@ -5,6 +5,7 @@ import (
 	"dekart/src/proto"
 	"dekart/src/server/storage"
 	"dekart/src/server/uuid"
+	"golang.org/x/oauth2"
 	"regexp"
 	"sync"
 	"time"
@@ -34,6 +35,10 @@ type Job interface {
 	Run(storageObject storage.StorageObject) error
 	Status() chan int32
 	Cancel()
+	SetCtx(ctx context.Context) context.Context
+
+	SetToken(token *oauth2.Token)
+	GetToken() (token *oauth2.Token)
 }
 
 // BasicJob implements the common methods for Job
@@ -52,12 +57,20 @@ type BasicJob struct {
 	ProcessedBytes int64
 	ResultSize     int64
 	Logger         zerolog.Logger
+	Token 		   *oauth2.Token
 }
 
 func (j *BasicJob) Init() {
 	j.id = uuid.GetUUID()
 	j.ctx, j.cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 	j.status = make(chan int32)
+}
+
+func (j *BasicJob) SetToken(token *oauth2.Token){
+	j.Token = token
+}
+func (j *BasicJob) GetToken() (token *oauth2.Token){
+	return j.Token
 }
 
 func (j *BasicJob) GetProcessedBytes() int64 {
@@ -109,6 +122,11 @@ func (j *BasicJob) GetTotalRows() int64 {
 }
 
 func (j *BasicJob) GetCtx() context.Context {
+	return j.ctx
+}
+
+func (j *BasicJob) SetCtx(ctx context.Context) context.Context {
+	j.ctx = ctx
 	return j.ctx
 }
 

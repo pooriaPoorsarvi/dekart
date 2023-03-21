@@ -3,16 +3,21 @@ package bqjob
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
 	"io"
 	"os"
 	"regexp"
+	"time"
 
 	"dekart/src/proto"
 	"dekart/src/server/job"
 	"dekart/src/server/storage"
 
-	"cloud.google.com/go/bigquery"
+	bigquery "google.golang.org/api/bigquery/v2"
+
 	"google.golang.org/api/googleapi"
 )
 
@@ -23,7 +28,8 @@ type Job struct {
 	storageObject       storage.StorageObject
 	maxReadStreamsCount int32
 	maxBytesBilled      int64
-	client              *bigquery.Client
+	client 				*bigquery.Service
+	token 				*oauth2.Token
 }
 
 var contextCancelledRe = regexp.MustCompile(`context canceled`)
@@ -61,21 +67,18 @@ func (job *Job) close(storageWriter io.WriteCloser, csvWriter *csv.Writer) {
 	job.Cancel()
 }
 
-func (job *Job) setJobStats(queryStatus *bigquery.JobStatus, table *bigquery.Table) error {
+func (job *Job) setJobStats(queryStatus *bigquery.Job, table *bigquery.Table) error {
 	if table == nil {
 		return fmt.Errorf("table is nil")
 	}
 
-	tableMetadata, err := table.Metadata(job.GetCtx())
-	if err != nil {
-		return err
-	}
+
 	job.Lock()
 	defer job.Unlock()
 	if queryStatus.Statistics != nil {
 		job.ProcessedBytes = queryStatus.Statistics.TotalBytesProcessed
 	}
-	job.TotalRows = int64(tableMetadata.NumRows)
+	job.TotalRows = int64(table.NumRows)
 	return nil
 }
 
@@ -119,41 +122,71 @@ func (job *Job) processApiErrors(err error) {
 	}
 }
 
-func getTableFromJob(job *bigquery.Job) (*bigquery.Table, error) {
-	cfg, err := job.Config()
-	if err != nil {
-		return nil, err
-	}
-	queryConfig, ok := cfg.(*bigquery.QueryConfig)
-	if !ok {
-		return nil, fmt.Errorf("was expecting QueryConfig type for configuration")
-	}
-	return queryConfig.Dst, nil
-}
-
 func (job *Job) getResultTable() (*bigquery.Table, error) {
-	table, err := getTableFromJob(job.bigqueryJob)
+	srcTbl := job.bigqueryJob.Configuration.Query.DestinationTable
+	table, err := job.client.Tables.Get(srcTbl.ProjectId, srcTbl.DatasetId, srcTbl.TableId).Do()
 	if err != nil {
+		job.Logger.Err(err)
 		return nil, err
-	}
-	if table == nil {
-		jobFromJobId, err := job.client.JobFromID(job.GetCtx(), job.bigqueryJob.ID())
-		if err != nil {
-			return nil, err
-		}
-		table, err = getTableFromJob(jobFromJobId)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if table == nil {
-		return nil, fmt.Errorf("result table is nil")
 	}
 	return table, nil
 }
 
+//func (job *Job) GetResultTableForScript() (*bigquery.Table, error){
+//
+//
+//
+//	jobFromJobId, err := job.client.JobFromID(job.GetCtx(), job.bigqueryJob.ID())
+//	if err != nil{
+//		return nil, err
+//	}
+//
+//	cfg, err := jobFromJobId.Config()
+//
+//	if err != nil{
+//		return nil, err
+//	}
+//
+//	queryConfig, ok := cfg.(*bigquery.QueryConfig)
+//	if !ok{
+//		err := fmt.Errorf("was expecting QueryConfig type for configuration")
+//		job.Logger.Error().Err(err).Str("jobConfig", fmt.Sprintf("%v+", cfg)).Send()
+//		return nil, err
+//	}
+//
+//	table := queryConfig.Dst
+//
+//	if table == nil {
+//		err := fmt.Errorf("destination table is nil even when gathered from JobId")
+//		job.Logger.Error().Err(err).Str("jobConfig", fmt.Sprintf("%v+", cfg)).Send()
+//		return nil, err
+//	}
+//
+//	return table, nil
+//
+//}
+
+
 func (job *Job) wait() {
-	queryStatus, err := job.bigqueryJob.Wait(job.GetCtx())
+
+	newJobInfo, err := job.client.Jobs.Get(job.bigqueryJob.JobReference.ProjectId, job.bigqueryJob.JobReference.JobId).Do()
+	for {
+		job.bigqueryJob, err = job.client.Jobs.Get(job.bigqueryJob.JobReference.ProjectId, job.bigqueryJob.JobReference.JobId).Do()
+		if err != nil {
+			break
+		}
+		if newJobInfo.Status.State == "DONE" {
+			if newJobInfo.Status.ErrorResult != nil {
+				err = errors.New(fmt.Sprint("job failed with error: %v", newJobInfo.Status.ErrorResult.Message))
+				break
+			}
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	job.bigqueryJob = newJobInfo
+	queryStatus := newJobInfo
+
 	if err == context.Canceled {
 		return
 	}
@@ -162,13 +195,13 @@ func (job *Job) wait() {
 		job.CancelWithError(err)
 		return
 	}
-	if queryStatus == nil {
+	if queryStatus.Status == nil {
 		job.Logger.Fatal().Msgf("queryStatus == nil")
 	}
-	if err := queryStatus.Err(); err != nil {
-		job.CancelWithError(err)
-		return
-	}
+	//if err := queryStatus.Status.Errors[0]; err != nil {
+	//	job.CancelWithError(errors.New(err.Reason))
+	//	return
+	//}
 
 	table, err := job.getResultTable()
 	if err != nil {
@@ -182,20 +215,26 @@ func (job *Job) wait() {
 		return
 	}
 
-	job.Status() <- int32(proto.Query_JOB_STATUS_READING_RESULTS)
+	job.Logger.Debug().Msg("setting status")
+	//job.Status() <- int32(proto.Query_JOB_STATUS_READING_RESULTS)
+	job.Logger.Debug().Msg("going for read")
 
 	csvRows := make(chan []string, job.TotalRows)
 	errors := make(chan error)
 
+	job.Logger.Debug().Msg("Reading")
 	// read table rows into csvRows
 	go Read(
-		job.GetCtx(),
+		//job.GetCtx(),
+		context.Background(),
+		job.token,
 		errors,
 		csvRows,
 		table,
 		job.Logger,
 		job.maxReadStreamsCount,
 	)
+	job.Logger.Debug().Msg("finished Reading")
 
 	// write csvRows to storage
 	go job.write(csvRows)
@@ -222,19 +261,32 @@ func (job *Job) setMaxReadStreamsCount(queryText string) {
 // Run implementation
 func (job *Job) Run(storageObject storage.StorageObject) error {
 	job.Logger.Debug().Msg("Run BigQuery Job")
-	client, err := bigquery.NewClient(job.GetCtx(), os.Getenv("DEKART_BIGQUERY_PROJECT_ID"))
+	token := job.GetToken()
+	job.token = token
+	oauthClient := oauth2.NewClient(job.GetCtx(), oauth2.StaticTokenSource(job.token))
+	client, err := bigquery.NewService(job.GetCtx(), option.WithHTTPClient(oauthClient))
 	if err != nil {
 		job.Cancel()
 		return err
 	}
 	job.client = client
 
-	query := client.Query(job.QueryText)
-	query.MaxBytesBilled = job.maxBytesBilled
+	UseLegacySql := false
+	queryRequest := &bigquery.QueryRequest{
+		Query: job.QueryText,
+		MaximumBytesBilled: job.maxBytesBilled,
+		UseLegacySql: &UseLegacySql,
+	}
+	query, err := job.client.Jobs.Query(os.Getenv("DEKART_BIGQUERY_PROJECT_ID"), queryRequest).Do()
+	if err != nil{
+		job.Logger.Err(err)
+		return err
+	}
+	//query.MaxBytesBilled = job.maxBytesBilled
 
 	job.setMaxReadStreamsCount(job.QueryText)
 
-	bigqueryJob, err := query.Run(job.GetCtx())
+	bigqueryJob, err := job.client.Jobs.Get(query.JobReference.ProjectId, query.JobReference.JobId).Do()
 	if err != nil {
 		job.Cancel()
 		return err

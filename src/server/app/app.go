@@ -4,6 +4,10 @@ import (
 	"dekart/src/proto"
 	"dekart/src/server/dekart"
 	"dekart/src/server/user"
+	"encoding/json"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/bigquery/v2"
 	"net/http"
 	"os"
 	"time"
@@ -12,6 +16,8 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+
+	GcpOauth "google.golang.org/api/oauth2/v2"
 )
 
 // ResponseWriter implementation which allows to oweride status code
@@ -49,12 +55,12 @@ func configureGRPC(dekartServer *dekart.Server) *grpcweb.WrappedGrpcServer {
 		server,
 		grpcweb.WithOriginFunc(func(origin string) bool {
 			if allowedOrigin == "" || allowedOrigin == "*" {
-				log.Warn().Msg("DEKART_CORS_ORIGIN is empty or *")
+				//log.Warn().Msg("DEKART_CORS_ORIGIN is empty or *")
 				return true
 			}
 			result := origin == allowedOrigin
 			if !result {
-				log.Warn().Str("origin", origin).Str("allowed origin", allowedOrigin).Msg("Origin is not allowed")
+				//log.Warn().Str("origin", origin).Str("allowed origin", allowedOrigin).Msg("Origin is not allowed")
 			}
 			return result
 		}),
@@ -63,7 +69,7 @@ func configureGRPC(dekartServer *dekart.Server) *grpcweb.WrappedGrpcServer {
 
 func setOriginHeader(w http.ResponseWriter, r *http.Request) {
 	if allowedOrigin == "" || allowedOrigin == "*" {
-		log.Warn().Msg("DEKART_CORS_ORIGIN is empty or *")
+		//log.Warn().Msg("DEKART_CORS_ORIGIN is empty or *")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	} else {
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
@@ -74,6 +80,58 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 	router := mux.NewRouter()
 	api := router.PathPrefix("/api/v1/").Subrouter()
 	api.Use(mux.CORSMethodMiddleware(router))
+
+	conf := &oauth2.Config{
+		ClientID:     "197398309945-ostmrt571il6vtgvd0mdceaccmhdmji8.apps.googleusercontent.com",
+		ClientSecret: "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",
+		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
+		Endpoint: google.Endpoint,
+		RedirectURL: "http://localhost:8080/api/v1//callback-authenticate-oauth2",
+	}
+
+
+	api.HandleFunc("/init-authenticate-oauth2", func(w http.ResponseWriter, r *http.Request) {
+
+		setOriginHeader(w, r)
+		if r.Method == http.MethodOptions {
+			return
+		}
+
+		ctx := r.Context()
+		claims := user.GetClaims(ctx)
+		_, err := dekartServer.RetrieveToken(claims.Email)
+
+		if err != nil  {
+			url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(&map[string]interface{}{"redirectUrl": url, "authorizationNeeded": true})
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(&map[string]interface{}{"redirectUrl": "", "authorizationNeeded": false})
+		}
+
+
+
+
+
+	}).Methods("POST", "GET", "OPTIONS")
+
+
+	api.HandleFunc("/callback-authenticate-oauth2", func(w http.ResponseWriter, r *http.Request) {
+		setOriginHeader(w, r)
+
+		if r.Method == http.MethodOptions {
+			return
+		}
+
+		dekartServer.SaveToken(r.Context(), r.URL.Query().Get("code"), r.URL.Query().Get("state"))
+		http.Redirect(w, r, "http://localhost:3000/", http.StatusSeeOther)
+
+
+	}).Methods("POST", "GET", "OPTIONS")
+
+
+
 
 	api.HandleFunc("/dataset-source/{id}.{extension:csv|geojson}", func(w http.ResponseWriter, r *http.Request) {
 		setOriginHeader(w, r)
