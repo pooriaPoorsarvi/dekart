@@ -63,8 +63,7 @@ func NewClaimsCheck(audience string, requireIAP bool, requireAmazonOIDC bool, re
 }
 
 // UnknownEmail is set as claims email when auth is not required
-//const UnknownEmail = "UNKNOWN_EMAIL"
-const UnknownEmail = "pooria.poorsarvi.tehrani@gmail.com"
+const UnknownEmail = "UNKNOWN_EMAIL"
 
 // GetContext Context with user claims
 func (c ClaimsCheck) GetContext(r *http.Request) context.Context {

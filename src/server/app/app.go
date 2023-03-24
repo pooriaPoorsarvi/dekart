@@ -102,6 +102,10 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 		_, err := dekartServer.RetrieveToken(claims.Email)
 
 		if err != nil  {
+			if err == dekart.RetrievalNotSupported{
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(&map[string]interface{}{"redirectUrl": url, "authorizationNeeded": true})

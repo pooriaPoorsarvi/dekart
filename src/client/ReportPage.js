@@ -255,19 +255,31 @@ export default function ReportPage ({ edit }) {
     return queryStatus.changed || queryChanged
   }, false))
 
-
-  // TODO : here we should make a call to the backend, if it's authorized, continue, if not, redirect. 
+  const [showAlert, setShowAlert] = useState(true);
+  // TODO : here we should make a call to the backend, if it's authorized, continue, if not, redirect.
   fetch('http://localhost:8080/api/v1/init-authenticate-oauth2')
   .then(async  (response) => {
-    let responseData = await response.json();
-    console.log("got the response")
-    console.log(responseData);
-    if (responseData.authorizationNeeded){
-      window.location.href = responseData.redirectUrl;
+    console.log("got response")
+    if (response.status != 200){
+      if (showAlert && response.status == 400){
+        setShowAlert(false);
+        alert(await response.text());
+        window.location.href = '/';
+      }
+    }else{
+      console.log(response);
+      let responseData = await response.json();
+      console.log("got the response")
+      console.log(responseData);
+      if (responseData.authorizationNeeded){
+        window.location.href = responseData.redirectUrl;
+      }
     }
   })
-  .then(data => console.log(data))
-  .catch(error => console.error(error));
+  .then(data => {})
+  .catch(error => {
+    console.log(error);
+  });
 
   const dispatch = useDispatch()
 

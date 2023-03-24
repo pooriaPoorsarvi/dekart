@@ -3,6 +3,8 @@ package dekart
 import (
 	"context"
 	"database/sql"
+	"dekart/src/server/user"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
@@ -93,8 +95,13 @@ func contains(scopes []string, scope string) bool {
 	}
 	return false
 }
+
+var RetrievalNotSupported = errors.New("unknown email is not supported for token retrieval please use SA mode instead")
 func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 
+	if userEmail == user.UnknownEmail {
+		return nil, RetrievalNotSupported
+	}
 
 	ctx := context.Background()
 	// Create an OAuth2 configuration with the same values as the one used to obtain the access token
