@@ -260,8 +260,8 @@ export default function ReportPage ({ edit }) {
   fetch('http://localhost:8080/api/v1/init-authenticate-oauth2')
   .then(async  (response) => {
     console.log("got response")
-    if (response.status != 200){
-      if (showAlert && response.status == 400){
+    if (response.status !== 200){
+      if (showAlert && response.status === 400){
         setShowAlert(false);
         alert(await response.text());
         window.location.href = '/';
