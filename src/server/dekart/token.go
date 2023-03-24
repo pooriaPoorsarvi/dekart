@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/bigquery/v2"
 	GcpOauth "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 	"strings"
@@ -36,13 +34,7 @@ func (s Server) checkTokenScopes(conf *oauth2.Config, service *GcpOauth.Service,
 
 func (s Server) SaveToken(code string, state string) error {
 
-	conf := &oauth2.Config{
-		ClientID:     "197398309945-ostmrt571il6vtgvd0mdceaccmhdmji8.apps.googleusercontent.com",
-		ClientSecret: "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",
-		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "http://localhost:8080/api/v1/callback-authenticate-oauth2",
-	}
+	conf := OauthConf
 	ctx := context.Background()
 	tok, err := conf.Exchange(ctx, code)
 	if err != nil {
@@ -105,13 +97,7 @@ func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 
 	ctx := context.Background()
 	// Create an OAuth2 configuration with the same values as the one used to obtain the access token
-	conf := &oauth2.Config{
-		ClientID:     "197398309945-ostmrt571il6vtgvd0mdceaccmhdmji8.apps.googleusercontent.com",
-		ClientSecret: "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",
-		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "http://localhost:8080/api/v1//callback-authenticate-oauth2",
-	}
+	conf := OauthConf
 
 	type UserToken struct {
 		ID           string

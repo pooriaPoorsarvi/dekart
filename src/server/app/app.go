@@ -6,8 +6,6 @@ import (
 	"dekart/src/server/user"
 	"encoding/json"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/bigquery/v2"
 	"net/http"
 	"os"
 	"time"
@@ -16,8 +14,6 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-
-	GcpOauth "google.golang.org/api/oauth2/v2"
 )
 
 // ResponseWriter implementation which allows to oweride status code
@@ -81,13 +77,7 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 	api := router.PathPrefix("/api/v1/").Subrouter()
 	api.Use(mux.CORSMethodMiddleware(router))
 
-	conf := &oauth2.Config{
-		ClientID:     "197398309945-ostmrt571il6vtgvd0mdceaccmhdmji8.apps.googleusercontent.com",
-		ClientSecret: "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",
-		Scopes:       []string{bigquery.BigqueryScope, GcpOauth.UserinfoProfileScope, GcpOauth.UserinfoEmailScope},
-		Endpoint: google.Endpoint,
-		RedirectURL: "http://localhost:8080/api/v1/callback-authenticate-oauth2",
-	}
+	conf := dekart.OauthConf
 
 
 	api.HandleFunc("/init-authenticate-oauth2", func(w http.ResponseWriter, r *http.Request) {
