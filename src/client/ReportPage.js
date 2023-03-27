@@ -257,7 +257,7 @@ export default function ReportPage ({ edit }) {
 
   const [showAlert, setShowAlert] = useState(true);
   // TODO : here we should make a call to the backend, if it's authorized, continue, if not, redirect.
-  fetch('http://localhost:8080/api/v1/init-authenticate-oauth2')
+  fetch('api/v1/init-authenticate-oauth2')
   .then(async  (response) => {
     console.log("got response")
     if (response.status !== 200){
