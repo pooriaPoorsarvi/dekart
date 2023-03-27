@@ -132,8 +132,16 @@
     background-color: #15232F;
 }
 
-.keplerBlock :global #kepler-gl__kepler .side-panel__header__top {
+/* .keplerBlock :global #kepler-gl__kepler .side-panel__header__top {
     display: none;
+} */
+.keplerBlock :global #kepler-gl__kepler .side-panel__header__top p {
+    visibility: hidden;
+}
+
+.keplerBlock :global #kepler-gl__kepler .side-panel__header__top p::after {
+    visibility: visible;
+    content: "Export";
 }
 
 .keplerBlock :global #kepler-gl__kepler .add-data-button {

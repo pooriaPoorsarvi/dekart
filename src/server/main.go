@@ -116,7 +116,7 @@ func configureJobStore(bucket storage.Storage) job.Store {
 		log.Info().Msg("Using Athena Datasource backend")
 		jobStore = athenajob.NewStore(bucket)
 	case "BQ", "":
-		if os.Getenv("DEKART_DATASOURCE_CLIENT") == "API"{
+		if dekart.ShouldUseTokens() {
 			log.Info().Msg("Using BigQuery V2 Datasource backend")
 			jobStore = apiBqjob.NewStore()
 		}else{

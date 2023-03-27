@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	GcpOauth "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
+	"os"
 	"strings"
 	"time"
 )
@@ -177,3 +178,8 @@ func (s Server) deleteToken(userEmail string) {
 		log.Info().Msgf("Failed to delete token from database: %v", err)
 	}
 }
+
+func ShouldUseTokens() bool{
+	return os.Getenv("DEKART_DATASOURCE_CLIENT") == "API"
+}
+

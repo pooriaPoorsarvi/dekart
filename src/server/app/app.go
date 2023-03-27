@@ -87,6 +87,12 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 			return
 		}
 
+		if ! dekart.ShouldUseTokens(){
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(&map[string]interface{}{"redirectUrl": "", "authorizationNeeded": false})
+			return
+		}
+
 		ctx := r.Context()
 		claims := user.GetClaims(ctx)
 		_, err := dekartServer.RetrieveToken(claims.Email)
