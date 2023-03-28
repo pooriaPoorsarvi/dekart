@@ -125,7 +125,7 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 		}
 
 		dekartServer.SaveToken(r.URL.Query().Get("code"), r.URL.Query().Get("state"))
-		http.Redirect(w, r, "http://localhost:8080/", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 
 	}).Methods("POST", "GET", "OPTIONS")
