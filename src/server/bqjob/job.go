@@ -257,7 +257,8 @@ func (job *Job) Run(storageObject storage.StorageObject) error {
 	job.client = client
 
 	query := client.Query(job.QueryText)
-	query.MaxBytesBilled = job.maxBytesBilled
+	// TODO : Remove maxbytes billed for now, check later
+	// query.MaxBytesBilled = job.maxBytesBilled
 
 	job.setMaxReadStreamsCount(job.QueryText)
 

@@ -276,7 +276,8 @@ func (job *Job) Run(storageObject storage.StorageObject) error {
 	UseLegacySql := false
 	queryRequest := &bigquery.QueryRequest{
 		Query: job.QueryText,
-		MaximumBytesBilled: job.maxBytesBilled,
+		// TODO : Remove maxbytes billed for now, check later
+		// MaximumBytesBilled: job.maxBytesBilled,
 		UseLegacySql: &UseLegacySql,
 	}
 	query, err := job.client.Jobs.Query(os.Getenv("DEKART_BIGQUERY_PROJECT_ID"), queryRequest).Do()
