@@ -17,6 +17,7 @@
     "cypress": "^12.4.1",
     "google-protobuf": "^3.14.0",
     "immer": "^9.0.7",
+    "kepler.gl": "^2.5.5",
     "luxon": "^1.25.0",
     "pretty-bytes": "^5.5.0",
     "re-resizable": "^6.9.9",

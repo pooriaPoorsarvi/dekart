@@ -2,8 +2,8 @@ import { CreateDatasetRequest, RemoveDatasetRequest } from '../../proto/dekart_p
 import { Dekart } from '../../proto/dekart_pb_service'
 import { unary } from '../lib/grpc'
 import { downloading, error, finishDownloading, success } from './message'
-import { addDataToMap, toggleSidePanel } from '@dekart-xyz/kepler.gl/dist/actions'
-import { processCsvData, processGeojson } from '@dekart-xyz/kepler.gl/dist/processors'
+import { addDataToMap, toggleSidePanel } from 'kepler.gl/dist/actions'
+import { processCsvData, processGeojson } from 'kepler.gl/dist/processors'
 import { get } from '../lib/api'
 
 export function createDataset (reportId) {
