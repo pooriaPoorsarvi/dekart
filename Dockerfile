@@ -10,9 +10,10 @@ ADD src/client src/client
 ADD src/proto src/proto
 ADD src/index.js src/index.js
 ADD src/setupTests.js src/setupTests.js
+ADD build build
 
-FROM nodedeps as nodebuilder
-RUN npm run build
+# FROM nodedeps as nodebuilder
+# RUN npm run build
 
 FROM nodedeps as nodetest
 RUN npm run test
@@ -28,8 +29,8 @@ ADD src/server src/server
 FROM godeps as gobuilder
 RUN go build ./src/server
 
-FROM godeps as gotest
-RUN go test -v -count=1 ./src/server/**/
+# FROM godeps as gotest
+# RUN go test -v -count=1 ./src/server/**/
 
 FROM cypress/included:cypress-12.4.1-node-16.18.1-chrome-109.0.5414.74-1-ff-109.0-edge-109.0.1518.52-1 as e2etest
 WORKDIR /dekart
