@@ -256,30 +256,31 @@ export default function ReportPage ({ edit }) {
   }, false))
 
   const [showAlert, setShowAlert] = useState(true);
-  // TODO : here we should make a call to the backend, if it's authorized, continue, if not, redirect.
-  fetch('api/v1/init-authenticate-oauth2')
-  .then(async  (response) => {
-    console.log("got response")
-    if (response.status !== 200){
-      if (showAlert && response.status === 400){
-        setShowAlert(false);
-        alert(await response.text());
-        window.location.href = '/';
+  // This will make sure that authentication will only run once at the beginning
+  const [checkAuth, setCheckAuth] = useState(true);
+  // here we should make a call to the backend, if it's authorized, continue, if not, redirect.
+  if(checkAuth){
+    setCheckAuth(false);
+    fetch(window.location.origin+'/api/v1/init-authenticate-oauth2')
+    .then(async  (response) => {
+      if (response.status !== 200){
+        if (showAlert && response.status === 400){
+          setShowAlert(false);
+          alert(await response.text());
+          window.location.href = '/';
+        }
+      }else{
+        let responseData = await response.json();
+        if (responseData.authorizationNeeded){
+          window.location.href = responseData.redirectUrl;
+        }
       }
-    }else{
-      console.log(response);
-      let responseData = await response.json();
-      console.log("got the response")
-      console.log(responseData);
-      if (responseData.authorizationNeeded){
-        window.location.href = responseData.redirectUrl;
-      }
-    }
-  })
-  .then(data => {})
-  .catch(error => {
-    console.log(error);
-  });
+    })
+    .then(data => {})
+    .catch(error => {
+      console.log(error);
+    });
+  }
 
   const dispatch = useDispatch()
 
