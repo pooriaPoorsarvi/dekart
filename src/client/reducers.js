@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux'
-import keplerGlReducer from '@dekart-xyz/kepler.gl/dist/reducers'
-import { ActionTypes as KeplerActionTypes } from '@dekart-xyz/kepler.gl/dist/actions'
+import keplerGlReducer from 'kepler.gl/dist/reducers'
+import { ActionTypes as KeplerActionTypes } from 'kepler.gl/dist/actions'
 import { openReport, reportTitleChange, reportUpdate, saveMap, reportsListUpdate, unsubscribeReports, streamError, httpError, newReport, setEnv, forkReport, newForkedReport, downloading, finishDownloading, setActiveDataset, queryChanged, newRelease, querySource, uploadFile, uploadFileProgress, uploadFileStateChange, downloadDataset } from './actions'
 import { Query } from '../proto/dekart_pb'
 import { setUsage } from './actions/usage'
@@ -182,7 +182,7 @@ function queryStatus (state = {}, action) {
     case reportUpdate.name:
       return action.queriesList.reduce(function (queryStatus, query) {
         queryStatus[query.id] = {
-          canRun: [Query.JobStatus.JOB_STATUS_UNSPECIFIED, Query.JobStatus.JOB_STATUS_DONE, Query.JobStatus.JOB_STATUS_DONE_LEGACY].includes(query.jobStatus),
+          canRun: [Query.JobStatus.JOB_STATUS_UNSPECIFIED, Query.JobStatus.JOB_STATUS_DONE_LEGACY].includes(query.jobStatus),
           downloadingResults: false,
           querySourceId: query.querySourceId,
           querySource: query.querySource
