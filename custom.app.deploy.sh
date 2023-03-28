@@ -1,7 +1,8 @@
 
 
+echo "running gcloud app deploy --promote --image-url=$CUSTOM_DEKART_IMAGE_NAME:latest"
 
-gcloud app deploy --image-url=$CUSTOM_DEKART_IMAGE_NAME:latest -q
+gcloud app deploy --promote --image-url=$CUSTOM_DEKART_IMAGE_NAME:latest
 
 
 

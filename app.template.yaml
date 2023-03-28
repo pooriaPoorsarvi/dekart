@@ -1,5 +1,5 @@
 # https://cloud.google.com/appengine/docs/flexible/custom-runtimes/configuring-your-app-with-app-yaml#intro
-service: default
+service: dekart
 runtime: custom
 env: flex
 # service: dekart-service
