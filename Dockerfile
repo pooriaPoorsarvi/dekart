@@ -10,10 +10,9 @@ ADD src/client src/client
 ADD src/proto src/proto
 ADD src/index.js src/index.js
 ADD src/setupTests.js src/setupTests.js
-ADD build build
 
-# FROM nodedeps as nodebuilder
-# RUN npm run build
+FROM nodedeps as nodebuilder
+RUN npm run build
 
 FROM nodedeps as nodetest
 RUN npm run test
