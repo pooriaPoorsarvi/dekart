@@ -2,9 +2,14 @@ import { CreateDatasetRequest, RemoveDatasetRequest } from '../../proto/dekart_p
 import { Dekart } from '../../proto/dekart_pb_service'
 import { unary } from '../lib/grpc'
 import { downloading, error, finishDownloading, success } from './message'
-import { addDataToMap, toggleSidePanel, removeDataset as keplerRemove } from 'kepler.gl/dist/actions'
+import {
+  addDataToMap,
+  toggleSidePanel,
+  removeDataset as keplerRemove,
+} from 'kepler.gl/dist/actions'
 import { processCsvData, processGeojson } from 'kepler.gl/dist/processors'
 import { get } from '../lib/api'
+
 
 export function createDataset (reportId) {
   return (dispatch) => {
@@ -85,6 +90,7 @@ export function downloadDataset (dataset, sourceId, extension, label) {
         }
       }))
     } catch (err) {
+      console.log(err)
       dispatch(error(
         new Error(`Failed to add data to map: ${err.message}`),
         false

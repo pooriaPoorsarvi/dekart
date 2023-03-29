@@ -86,10 +86,6 @@ export function reportUpdate (reportStreamResponse) {
       prevDatasetsList,
       filesList
     })
-    if (report.mapConfig && !prevReport) {
-      const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(report.mapConfig))
-      dispatch(receiveMapConfig(parsedConfig))
-    }
 
     prevQueriesList.forEach(query => {
       if (!queriesList.find(q => q.id === query.id)) {
@@ -137,6 +133,10 @@ export function reportUpdate (reportStreamResponse) {
         dispatch(createQuery(dataset.id))
       }
     })
+    if (report.mapConfig) {
+      const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(report.mapConfig))
+      dispatch(receiveMapConfig(parsedConfig))
+    }
   }
 }
 
