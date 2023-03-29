@@ -182,7 +182,7 @@ function queryStatus (state = {}, action) {
     case reportUpdate.name:
       return action.queriesList.reduce(function (queryStatus, query) {
         queryStatus[query.id] = {
-          canRun: [Query.JobStatus.JOB_STATUS_UNSPECIFIED, Query.JobStatus.JOB_STATUS_DONE_LEGACY].includes(query.jobStatus),
+          canRun: [Query.JobStatus.JOB_STATUS_UNSPECIFIED, Query.JobStatus.JOB_STATUS_DONE, Query.JobStatus.JOB_STATUS_DONE_LEGACY].includes(query.jobStatus),
           downloadingResults: false,
           querySourceId: query.querySourceId,
           querySource: query.querySource
