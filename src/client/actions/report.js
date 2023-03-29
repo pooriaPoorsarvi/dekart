@@ -134,6 +134,7 @@ export function reportUpdate (reportStreamResponse) {
       }
     })
     if (report.mapConfig) {
+      // TODO : check if doing this everytime is going to cause a problem
       const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(report.mapConfig))
       dispatch(receiveMapConfig(parsedConfig))
     }
