@@ -102,6 +102,7 @@ export function downloadDataset (dataset, sourceId, extension, label) {
           let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
           // console.log(new_config);
           parsedConfig.visState.layers = parsedConfig.visState.layers.filter(layer => layer.config.dataId == dataset.id);
+          parsedConfig.visState.filters = parsedConfig.visState.filters.filter(filter => filter.dataId.filter(id => id == dataset.id).length > 0);
           dispatch(receiveMapConfig(parsedConfig, {keepExistingConfig: true}));
         }
       }
