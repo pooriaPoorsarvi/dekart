@@ -95,14 +95,14 @@ export function downloadDataset (dataset, sourceId, extension, label) {
       if (datasetLayer){
         // Changes required for keeping the in memory changes of kepler
         let cK = localStorage.getItem("keplerConfig");
-        if( cK && cK !="undefined" ){
+        if( cK && cK !=="undefined" ){
           const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(cK));
           // console.log("configs are:");
           // console.log(parsedConfig.visState);
-          let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
+          // let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
           // console.log(new_config);
-          parsedConfig.visState.layers = parsedConfig.visState.layers.filter(layer => layer.config.dataId == dataset.id);
-          parsedConfig.visState.filters = parsedConfig.visState.filters.filter(filter => filter.dataId.filter(id => id == dataset.id).length > 0);
+          parsedConfig.visState.layers = parsedConfig.visState.layers.filter(layer => layer.config.dataId === dataset.id);
+          parsedConfig.visState.filters = parsedConfig.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
           dispatch(receiveMapConfig(parsedConfig, {keepExistingConfig: true}));
         }
       }

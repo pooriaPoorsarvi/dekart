@@ -16,7 +16,6 @@ import { Duration } from 'luxon'
 import prettyBites from 'pretty-bytes'
 import DataDocumentationLink from './DataDocumentationLink'
 import { KeplerGlSchema } from 'kepler.gl/dist/schemas'
-import { KeplerGl } from 'kepler.gl/dist/components'
 
 function CancelButton ({ query }) {
   const dispatch = useDispatch()
