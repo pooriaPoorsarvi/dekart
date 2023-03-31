@@ -28,6 +28,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
+	"github.com/getsentry/sentry-go"
 )
 
 func configureLogger() {
@@ -148,8 +149,31 @@ func waitForInterrupt() chan os.Signal {
 	return s
 }
 
+func setUpSentry() error {
+	dsn := os.Getenv("DEKART_SENTRY_DSN_BACKEND")
+	if dsn != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn: dsn,
+			// Enable printing of SDK debug messages.
+			// Useful when getting started or trying to figure something out.
+			Debug: true,
+		})
+		if err != nil {
+			return err
+		}
+		log.Info().Msg("Sentry started")
+	}
+	return nil
+}
+
 func main() {
 	configureLogger()
+
+	err := setUpSentry()
+
+	if err != nil{
+		log.Fatal().Err(err)
+	}
 
 	db := configureDb()
 	defer db.Close()
