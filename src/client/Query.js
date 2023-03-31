@@ -15,6 +15,8 @@ import { SendOutlined, CheckCircleTwoTone, ExclamationCircleTwoTone, ClockCircle
 import { Duration } from 'luxon'
 import prettyBites from 'pretty-bytes'
 import DataDocumentationLink from './DataDocumentationLink'
+import { KeplerGlSchema } from 'kepler.gl/dist/schemas'
+import { KeplerGl } from 'kepler.gl/dist/components'
 
 function CancelButton ({ query }) {
   const dispatch = useDispatch()
@@ -181,6 +183,8 @@ function QueryStatus ({ children, query }) {
 export default function Query ({ query }) {
   const { canRun, queryText } = useSelector(state => state.queryStatus[query.id])
   const { canWrite } = useSelector(state => state.report)
+  // TODO : remove this after the fixing of kepler bug
+  const kepler = useSelector(state => state.keplerGl.kepler)
   const dispatch = useDispatch()
   return (
     <div key={query.id} className={styles.query}>
@@ -198,7 +202,12 @@ export default function Query ({ query }) {
                 size='large'
                 disabled={!canRun}
                 icon={<SendOutlined />}
-                onClick={() => dispatch(runQuery(query.id, queryText))}
+                onClick={ async () => {
+                  // TODO : remove this after the fixing of kepler bug
+                  localStorage.setItem("keplerConfig", JSON.stringify(KeplerGlSchema.getConfigToSave(kepler)));
+                  
+                  dispatch(runQuery(query.id, queryText))
+                }}
               >Execute
               </Button>
               )

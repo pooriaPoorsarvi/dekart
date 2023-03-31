@@ -87,6 +87,14 @@ export function reportUpdate (reportStreamResponse) {
       filesList
     })
 
+    if (report.mapConfig  && !prevReport) {
+        // TODO : remove this after the fixing of kepler bug
+        localStorage.setItem("keplerConfig", "undefined");
+        
+        
+        const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(report.mapConfig));
+        dispatch(receiveMapConfig(parsedConfig))
+    }
     prevQueriesList.forEach(query => {
       if (!queriesList.find(q => q.id === query.id)) {
         const dataset = prevDatasetsList.find(d => d.queryId === query.id)
@@ -133,11 +141,6 @@ export function reportUpdate (reportStreamResponse) {
         dispatch(createQuery(dataset.id))
       }
     })
-    if (report.mapConfig) {
-      // TODO : check if doing this everytime is going to cause a problem
-      const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(report.mapConfig))
-      dispatch(receiveMapConfig(parsedConfig))
-    }
   }
 }
 

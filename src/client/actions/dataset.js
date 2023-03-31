@@ -6,9 +6,11 @@ import {
   addDataToMap,
   toggleSidePanel,
   removeDataset as keplerRemove,
+  receiveMapConfig
 } from 'kepler.gl/dist/actions'
 import { processCsvData, processGeojson } from 'kepler.gl/dist/processors'
 import { get } from '../lib/api'
+import { KeplerGlSchema } from 'kepler.gl/dist/schemas'
 
 
 export function createDataset (reportId) {
@@ -79,8 +81,33 @@ export function downloadDataset (dataset, sourceId, extension, label) {
       return
     }
     try {
+
+      // TODO : remove the following retrieval of current stage on the fixing of kepler bug
+      const { keplerGl } = getState()
+      const visState = keplerGl['kepler'].visState;
+      const datasetLayer = visState.layers.find(layer => layer.config.dataId === dataset.id);
+
+
       dispatch(keplerRemove(dataset.id))
-      dispatch(addDataToMap({
+
+
+      // TODO : remove the following retrieval of current stage on the fixing of kepler bug
+      if (datasetLayer){
+        // Changes required for keeping the in memory changes of kepler
+        let cK = localStorage.getItem("keplerConfig");
+        if( cK && cK !="undefined" ){
+          const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(cK));
+          // console.log("configs are:");
+          // console.log(parsedConfig.visState);
+          let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
+          // console.log(new_config);
+          parsedConfig.visState.layers = parsedConfig.visState.layers.filter(layer => layer.config.dataId == dataset.id);
+          dispatch(receiveMapConfig(parsedConfig, {keepExistingConfig: true}));
+        }
+      }
+
+
+      await dispatch(addDataToMap({
         datasets: {
           info: {
             label,
