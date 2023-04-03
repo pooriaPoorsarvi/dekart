@@ -36,6 +36,8 @@ env_variables:
   OauthClientId: "$OauthClientId"
   OauthClientSecret: "$OauthClientSecret"
   OauthRedirectUrl: "$OauthRedirectUrl"
+  DEKART_SENTRY_DSN_FRONTEND: "$DEKART_SENTRY_DSN_FRONTEND"
+  DEKART_SENTRY_DSN_BACKEND: "$DEKART_SENTRY_DSN_BACKEND"
   
 
 beta_settings:
