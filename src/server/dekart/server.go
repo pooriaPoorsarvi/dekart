@@ -93,6 +93,10 @@ func (s Server) GetEnv(ctx context.Context, req *proto.GetEnvRequest) (*proto.Ge
 			Type:  proto.GetEnvResponse_Variable_TYPE_DISABLE_USAGE_STATS,
 			Value: defaultString(os.Getenv("DEKART_DISABLE_USAGE_STATS"), ""),
 		},
+		{
+			Type:  proto.GetEnvResponse_Variable_TYPE_SENTRY_DSN_FRONTEND,
+			Value: defaultString(os.Getenv("DEKART_SENTRY_DSN_FRONTEND"), ""),
+		},
 	}
 	return &proto.GetEnvResponse{
 		Variables: variables,

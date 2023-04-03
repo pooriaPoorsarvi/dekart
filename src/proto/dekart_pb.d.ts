@@ -222,7 +222,7 @@ export namespace GetEnvResponse {
       TYPE_REQUIRE_AMAZON_OIDC: 7;
       TYPE_REQUIRE_IAP: 8;
       TYPE_DISABLE_USAGE_STATS: 9;
-      TYPE_DISABLE_SENTRY_DSN_FRONTEND: 10;
+      TYPE_SENTRY_DSN_FRONTEND: 10;
     }
 
     export const Type: TypeMap;
