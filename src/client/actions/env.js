@@ -21,14 +21,17 @@ export function getEnv () {
         return variables
       }, {})
       dispatch(setEnv(variables))
-      Sentry.init({
-        dsn: variables["SENTRY_DSN_FRONTEND"],
-        integrations: [new Sentry.BrowserTracing({ tracingOrigins: ["*"] })],
+      if(variables["SENTRY_DSN_FRONTEND"] && variables["SENTRY_DSN_FRONTEND"].length > 0){
+        Sentry.init({
+          dsn: variables["SENTRY_DSN_FRONTEND"],
+          integrations: [new Sentry.BrowserTracing({ tracingOrigins: ["*"] })],
 
-        // We recommend adjusting this value in production, or using tracesSampler
-        // for finer control
-        tracesSampleRate: 1.0,
-      });
+          // We recommend adjusting this value in production, or using tracesSampler
+          // for finer control
+          tracesSampleRate: 1.0,
+        });
+        console.log("Sentry setup finished");
+      }
     } catch (err) {
       dispatch(error(err))
     }
