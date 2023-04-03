@@ -6,6 +6,7 @@
     "@dekart-xyz/kepler.gl": "2.5.5-fix.1",
     "@improbable-eng/grpc-web": "^0.13.0",
     "@loaders.gl/images": "^3.3.1",
+    "@sentry/react": "^7.46.0",
     "@testing-library/jest-dom": "^5.11.6",
     "@testing-library/react": "^11.2.2",
     "@testing-library/user-event": "^12.5.0",

@@ -2,6 +2,7 @@ import { GetEnvRequest, GetEnvResponse } from '../../proto/dekart_pb'
 import { Dekart } from '../../proto/dekart_pb_service'
 import { unary } from '../lib/grpc'
 import { error } from './message'
+import * as Sentry from "@sentry/react";
 
 export function setEnv (variables) {
   return { type: setEnv.name, variables }
@@ -20,6 +21,14 @@ export function getEnv () {
         return variables
       }, {})
       dispatch(setEnv(variables))
+      Sentry.init({
+        dsn: variables["SENTRY_DSN_FRONTEND"],
+        integrations: [new Sentry.BrowserTracing({ tracingOrigins: ["*"] })],
+
+        // We recommend adjusting this value in production, or using tracesSampler
+        // for finer control
+        tracesSampleRate: 1.0,
+      });
     } catch (err) {
       dispatch(error(err))
     }
