@@ -67,7 +67,7 @@ func NewClaimsCheck(audience string, requireIAP bool, requireAmazonOIDC bool, re
 			log.Debug().Msgf("Could not set custom default email using cred file")
 			log.Error().Err(err)
 		}else{
-			log.Debug().Msgf("Got default email from cred file: %s", email)
+			log.Info().Msgf("Got default email from cred file: %s", email)
 			UnknownEmail = email
 		}
 	}
