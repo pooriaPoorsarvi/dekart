@@ -4,6 +4,7 @@ import (
 	"dekart/src/proto"
 	"dekart/src/server/dekart"
 	"dekart/src/server/user"
+	"dekart/src/server/utils"
 	"encoding/json"
 	"golang.org/x/oauth2"
 	"net/http"
@@ -77,7 +78,7 @@ func configureHTTP(dekartServer *dekart.Server) *mux.Router {
 	api := router.PathPrefix("/api/v1/").Subrouter()
 	api.Use(mux.CORSMethodMiddleware(router))
 
-	conf := dekart.OauthConf
+	conf := utils.OauthConf
 
 
 	api.HandleFunc("/init-authenticate-oauth2", func(w http.ResponseWriter, r *http.Request) {

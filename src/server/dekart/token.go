@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"dekart/src/server/user"
+	"dekart/src/server/utils"
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
@@ -35,7 +36,7 @@ func (s Server) checkTokenScopes(conf *oauth2.Config, service *GcpOauth.Service,
 
 func (s Server) SaveToken(code string, state string) error {
 
-	conf := OauthConf
+	conf := utils.OauthConf
 	ctx := context.Background()
 	tok, err := conf.Exchange(ctx, code)
 	if err != nil {
@@ -98,7 +99,7 @@ func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 
 	ctx := context.Background()
 	// Create an OAuth2 configuration with the same values as the one used to obtain the access token
-	conf := OauthConf
+	conf := utils.OauthConf
 
 	type UserToken struct {
 		ID           string

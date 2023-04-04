@@ -1,4 +1,4 @@
-package dekart
+package utils
 
 import (
 	"golang.org/x/oauth2"

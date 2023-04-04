@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/idtoken"
+
+
 )
 
 // Claims stores user detail received from request
@@ -33,6 +36,10 @@ type ClaimsCheck struct {
 	publicKeys        *sync.Map
 }
 
+
+// UnknownEmail is set as claims email when auth is not required
+var UnknownEmail = "UNKNOWN_EMAIL"
+
 // NewClaimsCheck creates Context
 func NewClaimsCheck(audience string, requireIAP bool, requireAmazonOIDC bool, region string, devClaimsEmail string) ClaimsCheck {
 	if requireIAP && requireAmazonOIDC {
@@ -52,6 +59,19 @@ func NewClaimsCheck(audience string, requireIAP bool, requireAmazonOIDC bool, re
 		log.Warn().Msgf("Use DEKART_DEV_CLAIMS_EMAIL only in development environment")
 	}
 
+	credPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	defaultEmail := os.Getenv("DEKART_DEFAULT_EMAIL")
+	if credPath != "" && defaultEmail == "CRED"{
+		email, err := getEmail()
+		if err != nil || email == "" {
+			log.Debug().Msgf("Could not set custom default email using cred file")
+			log.Error().Err(err)
+		}else{
+			log.Debug().Msgf("Got default email from cred file: %s", email)
+			UnknownEmail = email
+		}
+	}
+
 	return ClaimsCheck{
 		audience,
 		requireIAP,
@@ -62,8 +82,6 @@ func NewClaimsCheck(audience string, requireIAP bool, requireAmazonOIDC bool, re
 	}
 }
 
-// UnknownEmail is set as claims email when auth is not required
-const UnknownEmail = "UNKNOWN_EMAIL"
 
 // GetContext Context with user claims
 func (c ClaimsCheck) GetContext(r *http.Request) context.Context {
