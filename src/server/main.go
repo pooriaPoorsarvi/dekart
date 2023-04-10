@@ -174,6 +174,7 @@ func main() {
 	if err != nil{
 		log.Fatal().Err(err)
 	}
+	defer sentry.Flush(2 * time.Second)
 
 	db := configureDb()
 	defer db.Close()
