@@ -3,7 +3,18 @@
 # syntax=docker/dockerfile:1
 
 
-FROM custom_dekart_server AS server
+# FROM custom_dekart_server AS server
+
+FROM golang:1.17 as godeps
+WORKDIR /source
+ADD go.mod .
+ADD go.sum .
+RUN go mod download -x
+ADD src/proto src/proto
+ADD src/server src/server
+
+FROM godeps as gobuilder
+RUN go build ./src/server
 
 
 
@@ -18,9 +29,14 @@ RUN curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/
 RUN chmod +x cloud-sql-proxy
 
 COPY . /dekart
-COPY --from=server /dekart /dekart
-RUN rm /dekart/build
-COPY ./build /dekart/build
+
+COPY --from=gobuilder /source/server .
+ADD migrations migrations
+ENV DEKART_PORT=8080
+ENV DEKART_STATIC_FILES=./build
+
+ADD build build
+
 
 CMD ["bash", "/dekart/custom.docker.server.sh" ]
 
