@@ -19,6 +19,8 @@ RUN chmod +x cloud-sql-proxy
 
 COPY . /dekart
 COPY --from=server /dekart /dekart
+RUN rm /dekart/build
+COPY ./build /dekart/build
 
 CMD ["bash", "/dekart/custom.docker.server.sh" ]
 
