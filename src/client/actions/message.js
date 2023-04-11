@@ -1,6 +1,7 @@
 import message from 'antd/es/message'
 import PermanentError from '../PermanentError'
 import StreamError from '../StreamError'
+import * as Sentry from "@sentry/react";
 
 const style = { /* marginTop: 0 */ }
 
@@ -24,6 +25,7 @@ export function success (content) {
 
 export function error (err, transitive = true) {
   console.error(err)
+  Sentry.captureException(err);
   if (transitive) {
     message.error({
       content: err.message,
