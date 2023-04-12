@@ -202,7 +202,7 @@ func Configure(dekartServer *dekart.Server) *http.Server {
 			}
 		}),
 		Addr:         ":" + port,
-		WriteTimeout: 60 * time.Second,
-		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 5 * 60 * time.Second,
+		ReadTimeout:  5 * 60 * time.Second,
 	}
 }
