@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -222,6 +223,14 @@ func (s Server) ServeDatasetSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	size, err := obj.GetSize(ctx)
+	if err != nil {
+		log.Err(err).Send()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+
 	objectReader, err := obj.GetReader(ctx)
 	if err != nil {
 		log.Err(err).Send()
@@ -229,12 +238,18 @@ func (s Server) ServeDatasetSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer objectReader.Close()
-	w.Header().Set("Content-Type", "text/csv")
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.FormatInt(*size, 10))
 	w.Header().Set("Cache-Control", "public, max-age=31536000")
 	w.Header().Set("Last-Modified", ctreated.Format(time.UnixDate))
-	if _, err := io.Copy(w, objectReader); err != nil {
+	writeSize, err := io.Copy(w, objectReader)
+	if err != nil {
 		log.Err(err).Send()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if writeSize != *size {
+		log.Warn().Msgf("Expected size was " + strconv.FormatInt(*size, 10) + " but got " + strconv.FormatInt(writeSize, 10))
 	}
 }

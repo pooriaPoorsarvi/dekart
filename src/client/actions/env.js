@@ -28,7 +28,7 @@ export function getEnv () {
 
           // We recommend adjusting this value in production, or using tracesSampler
           // for finer control
-          release: "1.1",
+          release: "1.2",
           tracesSampleRate: 1.0,
         });
         console.log("Sentry setup finished");

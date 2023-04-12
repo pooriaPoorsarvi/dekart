@@ -65,7 +65,9 @@ export function downloadDataset (dataset, sourceId, extension, label) {
     try {
       const res = await get(`/dataset-source/${sourceId}.${extension}`)
       if (extension === 'csv') {
-        const csv = await res.text()
+        let decoder = new TextDecoder("utf-8");
+        let reader = res.body.getReader();
+        const csv = await reader.read().then((result)=>decoder.decode(result.value));
         data = processCsvData(csv)
       } else {
         const json = await res.json()
