@@ -142,7 +142,8 @@ func Read(ctx context.Context, errors chan error, csvRows chan []string, table *
 // messages.  The BigQuery Storage API may send message blocks up to 128MB
 // in size, see https://cloud.google.com/bigquery/docs/reference/storage/libraries
 var rpcOpts = gax.WithGRPCOptions(
-	grpc.MaxCallRecvMsgSize(1024 * 1024 * 129),
+	// 2 GB result set for max
+	grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024 * 2),
 )
 
 func (r *StreamReader) readStream() {
