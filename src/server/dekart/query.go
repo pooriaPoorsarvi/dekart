@@ -244,7 +244,7 @@ func (s Server) RunQuery(ctx context.Context, req *proto.RunQueryRequest) (*prot
 		if err == nil {
 			job.SetToken(token)
 			// 	job.SetCtx(context.WithValue(ctx, "GCP_TOKEN", *token))
-		}else{
+		} else {
 			log.Err(err)
 			return nil, err
 		}
@@ -261,6 +261,7 @@ func (s Server) RunQuery(ctx context.Context, req *proto.RunQueryRequest) (*prot
 	err = job.Run(obj)
 	if err != nil {
 		log.Err(err).Send()
+		go job.CancelWithError(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	res := &proto.RunQueryResponse{}

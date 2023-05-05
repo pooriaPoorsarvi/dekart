@@ -21,6 +21,7 @@ import (
 	"dekart/src/server/snowflakejob"
 	"dekart/src/server/storage"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -28,7 +29,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
-	"github.com/getsentry/sentry-go"
 )
 
 func configureLogger() {
@@ -120,7 +120,7 @@ func configureJobStore(bucket storage.Storage) job.Store {
 		if dekart.ShouldUseTokens() {
 			log.Info().Msg("Using BigQuery V2 Datasource backend")
 			jobStore = apiBqjob.NewStore()
-		}else{
+		} else {
 			log.Info().Msg("Using BigQuery Datasource backend")
 			jobStore = bqjob.NewStore()
 		}
@@ -171,7 +171,7 @@ func main() {
 
 	err := setUpSentry()
 
-	if err != nil{
+	if err != nil {
 		log.Fatal().Err(err)
 	}
 	defer sentry.Flush(2 * time.Second)

@@ -5,13 +5,14 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"golang.org/x/oauth2"
-	"google.golang.org/api/option"
 	"io"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
 
 	"dekart/src/proto"
 	"dekart/src/server/job"
@@ -29,8 +30,8 @@ type Job struct {
 	storageObject       storage.StorageObject
 	maxReadStreamsCount int32
 	maxBytesBilled      int64
-	client 				*bigquery.Service
-	token 				*oauth2.Token
+	client              *bigquery.Service
+	token               *oauth2.Token
 }
 
 var contextCancelledRe = regexp.MustCompile(`context canceled`)
@@ -72,7 +73,6 @@ func (job *Job) setJobStats(queryStatus *bigquery.Job, table *bigquery.Table) er
 	if table == nil {
 		return fmt.Errorf("table is nil")
 	}
-
 
 	job.Lock()
 	defer job.Unlock()
@@ -167,7 +167,6 @@ func (job *Job) getResultTable() (*bigquery.Table, error) {
 //
 //}
 
-
 func (job *Job) wait() {
 
 	newJobInfo, err := job.client.Jobs.Get(job.bigqueryJob.JobReference.ProjectId, job.bigqueryJob.JobReference.JobId).Do()
@@ -197,12 +196,13 @@ func (job *Job) wait() {
 		return
 	}
 	if queryStatus.Status == nil {
+		job.CancelWithError(errors.New("queryStatus == nil"))
 		job.Logger.Fatal().Msgf("queryStatus == nil")
 	}
 	if queryStatus.Status != nil && queryStatus.Status.Errors != nil && len(queryStatus.Status.Errors) > 0 {
 		errorsString := []string{}
 		for i := 0; i < len(queryStatus.Status.Errors); i++ {
-			errorsString = append(errorsString, queryStatus.Status.Errors[i].Reason + " : " + queryStatus.Status.Errors[i].Message)
+			errorsString = append(errorsString, queryStatus.Status.Errors[i].Reason+" : "+queryStatus.Status.Errors[i].Message)
 		}
 		job.CancelWithError(errors.New(strings.Join(errorsString, ",")))
 		return
@@ -281,7 +281,7 @@ func (job *Job) Run(storageObject storage.StorageObject) error {
 		UseLegacySql: &UseLegacySql,
 	}
 	query, err := job.client.Jobs.Query(os.Getenv("DEKART_BIGQUERY_PROJECT_ID"), queryRequest).Do()
-	if err != nil{
+	if err != nil {
 		job.Logger.Err(err)
 		return err
 	}

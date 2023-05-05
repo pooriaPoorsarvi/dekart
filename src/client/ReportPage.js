@@ -17,6 +17,8 @@ import ReportHeaderButtons from './ReportHeaderButtons'
 import Downloading from './Downloading'
 import Dataset from './Dataset'
 import { Resizable } from 're-resizable'
+import  LoadFileButton  from './LoadFile'
+import Excess from './ExcessData'
 
 function TabIcon ({ query }) {
   let iconColor = 'transparent'
@@ -304,6 +306,8 @@ export default function ReportPage ({ edit }) {
 
   return (
     <div className={styles.report}>
+      <LoadFileButton />
+      <Excess />
       <Downloading />
       <Header
         title={(<Title />)}

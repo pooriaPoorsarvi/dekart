@@ -5,10 +5,11 @@ import (
 	"dekart/src/proto"
 	"dekart/src/server/storage"
 	"dekart/src/server/uuid"
-	"golang.org/x/oauth2"
 	"regexp"
 	"sync"
 	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -39,6 +40,7 @@ type Job interface {
 
 	SetToken(token *oauth2.Token)
 	GetToken() (token *oauth2.Token)
+	CancelWithError(err error)
 }
 
 // BasicJob implements the common methods for Job
@@ -57,7 +59,7 @@ type BasicJob struct {
 	ProcessedBytes int64
 	ResultSize     int64
 	Logger         zerolog.Logger
-	Token 		   *oauth2.Token
+	Token          *oauth2.Token
 }
 
 func (j *BasicJob) Init() {
@@ -66,10 +68,10 @@ func (j *BasicJob) Init() {
 	j.status = make(chan int32)
 }
 
-func (j *BasicJob) SetToken(token *oauth2.Token){
+func (j *BasicJob) SetToken(token *oauth2.Token) {
 	j.Token = token
 }
-func (j *BasicJob) GetToken() (token *oauth2.Token){
+func (j *BasicJob) GetToken() (token *oauth2.Token) {
 	return j.Token
 }
 
@@ -160,7 +162,7 @@ func (s *BasicStore) StoreJob(job Job) {
 	s.Unlock()
 }
 
-//RemoveJobWhenDone blocks until the job is finished
+// RemoveJobWhenDone blocks until the job is finished
 func (s *BasicStore) RemoveJobWhenDone(job Job) {
 	<-job.GetCtx().Done()
 	log.Debug().Str("queryId", job.GetQueryID()).Msg("Removing job from store")

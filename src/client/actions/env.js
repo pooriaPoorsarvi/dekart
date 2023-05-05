@@ -3,7 +3,7 @@ import { Dekart } from '../../proto/dekart_pb_service'
 import { unary } from '../lib/grpc'
 import { error } from './message'
 import * as Sentry from "@sentry/react";
-
+// this creates the pay load
 export function setEnv (variables) {
   return { type: setEnv.name, variables }
 }
@@ -28,7 +28,7 @@ export function getEnv () {
 
           // We recommend adjusting this value in production, or using tracesSampler
           // for finer control
-          release: "1.2",
+          release: "1.41",
           tracesSampleRate: 1.0,
         });
         console.log("Sentry setup finished");

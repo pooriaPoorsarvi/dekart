@@ -100,6 +100,8 @@ export function reportUpdate (reportStreamResponse) {
         const dataset = prevDatasetsList.find(d => d.queryId === query.id)
         if (dataset) {
           dispatch(removeDataset(dataset.id))
+          // TODO update this to not depend on this
+          dispatch(removeDataset(dataset.id+".csv"))
         }
       }
     })
@@ -108,6 +110,8 @@ export function reportUpdate (reportStreamResponse) {
         const dataset = prevDatasetsList.find(d => d.fileId === file.id)
         if (dataset) {
           dispatch(removeDataset(dataset.id))
+          // TODO update this to not depend on this
+          dispatch(removeDataset(dataset.id+".csv"))
         }
       }
     })

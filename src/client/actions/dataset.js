@@ -1,12 +1,13 @@
 import { CreateDatasetRequest, RemoveDatasetRequest } from '../../proto/dekart_pb'
 import { Dekart } from '../../proto/dekart_pb_service'
 import { unary } from '../lib/grpc'
-import { downloading, error, finishDownloading, success } from './message'
+import { downloading, error, finishDownloading, success, slowDownLimit, alertLimit } from './message'
 import {
   addDataToMap,
   toggleSidePanel,
   removeDataset as keplerRemove,
-  receiveMapConfig
+  receiveMapConfig,
+  loadFiles
 } from 'kepler.gl/dist/actions'
 import { processCsvData, processGeojson } from 'kepler.gl/dist/processors'
 import { get } from '../lib/api'
@@ -37,7 +38,7 @@ export function removeDataset (datasetId) {
     const { datasets, activeDataset } = getState()
     if (activeDataset.id === datasetId) {
       // removed active query
-      const datasetsLeft = datasets.filter(q => q.id !== datasetId)
+      const datasetsLeft = datasets.filter(q => q.id !== datasetId && q.id !== datasetId.split(".")[0])
       if (datasetsLeft.length === 0) {
         dispatch(error(new Error('Cannot remove last dataset')))
         return
@@ -45,6 +46,10 @@ export function removeDataset (datasetId) {
       dispatch(setActiveDataset(datasetsLeft.id))
     }
     dispatch({ type: removeDataset.name, datasetId })
+    let csvId = datasetId + ".csv";
+    dispatch(keplerRemove(csvId))
+    dispatch(keplerRemove(datasetId))
+
 
     const request = new RemoveDatasetRequest()
     request.setDatasetId(datasetId)
@@ -57,6 +62,32 @@ export function removeDataset (datasetId) {
   }
 }
 
+export function loadFile (dataset, sourceId, extension, label) {
+  return { 
+    type: loadFile.name, 
+    downloadDatasetValue:{
+      "dataset":dataset,
+      "sourceId": sourceId, 
+      "extension": extension, 
+      "label": label
+    }
+  }
+}
+
+
+export function loadFileStarted (dataset, sourceId, extension, label) {
+  return { 
+    type: loadFileStarted.name, 
+    downloadDatasetValue:{
+      "dataset":dataset,
+      "sourceId": sourceId, 
+      "extension": extension, 
+      "label": label
+    }
+  }
+}
+
+
 export function downloadDataset (dataset, sourceId, extension, label) {
   return async (dispatch, getState) => {
     dispatch({ type: downloadDataset.name, dataset })
@@ -65,10 +96,30 @@ export function downloadDataset (dataset, sourceId, extension, label) {
     try {
       const res = await get(`/dataset-source/${sourceId}.${extension}`)
       if (extension === 'csv') {
-        let decoder = new TextDecoder("utf-8");
-        let reader = res.body.getReader();
-        const csv = await reader.read().then((result)=>decoder.decode(result.value));
-        data = processCsvData(csv)
+        
+        let res_clone = res.clone();
+        let blob = await res_clone.blob();
+        const {fileLoadNeeded} = getState();
+        let csv;
+        if(fileLoadNeeded.filter(d => d.dataset.id === dataset.id).length === 0){
+          csv = await res.text();
+          // console.log("csv is");
+          // console.log(csv);
+          if(blob.size > 0 && csv.length === 0){
+            dispatch(finishDownloading(dataset))
+            dispatch(loadFile(dataset, sourceId, extension, label))
+            return;
+          }
+          data = processCsvData(csv)
+        }else{
+          const files = new File([blob], `${dataset.id}.${extension}`)
+          dispatch(loadFiles([files]))
+          dispatch(loadFileStarted(dataset, sourceId, extension, label))
+          dispatch(toggleSidePanel('layer'))
+          return;
+        }
+        
+        // if (res.siz)
       } else {
         const json = await res.json()
         data = processGeojson(json)
@@ -101,14 +152,17 @@ export function downloadDataset (dataset, sourceId, extension, label) {
           const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(cK));
           // console.log("configs are:");
           // console.log(parsedConfig.visState);
-          // let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
+          let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
           // console.log(new_config);
           parsedConfig.visState.layers = parsedConfig.visState.layers.filter(layer => layer.config.dataId === dataset.id);
           parsedConfig.visState.filters = parsedConfig.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
+          // console.log("parsedConfig");
+          // console.log(parsedConfig);
+          parsedConfig.visState.interactionConfig = new_config.interactionConfig;
+
           dispatch(receiveMapConfig(parsedConfig, {keepExistingConfig: true}));
         }
       }
-
 
       await dispatch(addDataToMap({
         datasets: {
@@ -119,6 +173,11 @@ export function downloadDataset (dataset, sourceId, extension, label) {
           data
         }
       }))
+
+      if (data.rows.length > slowDownLimit){
+        dispatch(alertLimit(data.rows.length, dataset.id));
+      }
+
     } catch (err) {
       console.log(err)
       dispatch(error(

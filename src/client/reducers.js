@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux'
 import keplerGlReducer from 'kepler.gl/dist/reducers'
 import { ActionTypes as KeplerActionTypes } from 'kepler.gl/dist/actions'
-import { openReport, reportTitleChange, reportUpdate, saveMap, reportsListUpdate, unsubscribeReports, streamError, httpError, newReport, setEnv, forkReport, newForkedReport, downloading, finishDownloading, setActiveDataset, queryChanged, newRelease, querySource, uploadFile, uploadFileProgress, uploadFileStateChange, downloadDataset } from './actions'
+import { finishDownloadingFile, alertLimit, finishAlertLimit, loadFileStarted, openReport, reportTitleChange, reportUpdate, saveMap, reportsListUpdate, unsubscribeReports, streamError, httpError, newReport, setEnv, forkReport, newForkedReport, downloading, finishDownloading, setActiveDataset, queryChanged, newRelease, querySource, uploadFile, uploadFileProgress, uploadFileStateChange, downloadDataset, loadFile } from './actions'
 import { Query } from '../proto/dekart_pb'
 import { setUsage } from './actions/usage'
 
@@ -266,12 +266,22 @@ function httpErrorStatus (state = 0, action) {
 }
 
 function downloadingDatasets (state = [], action) {
+  console.log("action:");
+  console.log(action);
   const { dataset } = action
   switch (action.type) {
     case downloading.name:
       return state.concat(dataset)
     case finishDownloading.name:
       return state.filter(d => d.id !== dataset.id)
+    
+    case "@@kepler.gl/LOAD_FILES_SUCCESS":
+      const { result } = action
+      for(let r of result){
+        let id = r.info.label.split(".")[0];
+        state = state.filter(d => d.id !== id);
+      }
+      return state
     default:
       return state
   }
@@ -342,6 +352,35 @@ function fileUploadStatus (state = {}, action) {
   }
 }
 
+function fileLoadNeeded(state = [], action){
+  const { downloadDatasetValue } = action
+  switch(action.type){
+    case loadFile.name: 
+      state = state.concat(downloadDatasetValue);
+      return state
+    case loadFileStarted.name: 
+      state = state.filter(d => d.dataset.id !== downloadDatasetValue.dataset.id);
+      return state
+    default:
+      return state
+  }
+}
+
+
+function excessRows(state = [], action){
+  const { dataInfo } = action
+  switch(action.type){
+    case alertLimit.name:
+      state = state.concat(dataInfo);
+      return state
+    case finishAlertLimit.name:
+      return state.filter(d => d.datasetId !== dataInfo.datasetId)
+    default:
+      return state
+  }
+}
+
+
 export default combineReducers({
   keplerGl,
   report,
@@ -357,5 +396,7 @@ export default combineReducers({
   datasets,
   files,
   fileUploadStatus,
-  usage
+  usage,
+  fileLoadNeeded,
+  excessRows,
 })

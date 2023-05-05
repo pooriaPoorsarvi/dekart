@@ -7,6 +7,8 @@ const style = { /* marginTop: 0 */ }
 
 message.config({ top: 40 })
 
+export const slowDownLimit = 1000000;
+
 export function downloading (dataset) {
   return { type: downloading.name, dataset }
 }
@@ -14,6 +16,16 @@ export function downloading (dataset) {
 export function finishDownloading (dataset) {
   return { type: finishDownloading.name, dataset }
 }
+
+
+export function alertLimit (rows, datasetId) {
+  return { type: alertLimit.name, dataInfo:{"rows": rows, "datasetId": datasetId} }
+}
+
+export function finishAlertLimit (rows, datasetId) {
+  return { type: finishAlertLimit.name, dataInfo:{"rows": rows, "datasetId": datasetId} }
+}
+
 
 export function success (content) {
   message.success({

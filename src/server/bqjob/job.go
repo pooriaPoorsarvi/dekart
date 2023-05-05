@@ -3,6 +3,7 @@ package bqjob
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -24,7 +25,7 @@ type Job struct {
 	storageObject       storage.StorageObject
 	maxReadStreamsCount int32
 	maxBytesBilled      int64
-	client 				*bigquery.Client
+	client              *bigquery.Client
 }
 
 var contextCancelledRe = regexp.MustCompile(`context canceled`)
@@ -141,23 +142,21 @@ func (job *Job) getResultTable() (*bigquery.Table, error) {
 	return table, nil
 }
 
-func (job *Job) GetResultTableForScript() (*bigquery.Table, error){
-
-
+func (job *Job) GetResultTableForScript() (*bigquery.Table, error) {
 
 	jobFromJobId, err := job.client.JobFromID(job.GetCtx(), job.bigqueryJob.ID())
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	cfg, err := jobFromJobId.Config()
 
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	queryConfig, ok := cfg.(*bigquery.QueryConfig)
-	if !ok{
+	if !ok {
 		err := fmt.Errorf("was expecting QueryConfig type for configuration")
 		job.Logger.Error().Err(err).Str("jobConfig", fmt.Sprintf("%v+", cfg)).Send()
 		return nil, err
@@ -175,7 +174,6 @@ func (job *Job) GetResultTableForScript() (*bigquery.Table, error){
 
 }
 
-
 func (job *Job) wait() {
 	queryStatus, err := job.bigqueryJob.Wait(job.GetCtx())
 	if err == context.Canceled {
@@ -187,7 +185,9 @@ func (job *Job) wait() {
 		return
 	}
 	if queryStatus == nil {
+		job.CancelWithError(errors.New("queryStatus == nil"))
 		job.Logger.Fatal().Msgf("queryStatus == nil")
+		return
 	}
 	if err := queryStatus.Err(); err != nil {
 		job.CancelWithError(err)
@@ -197,7 +197,7 @@ func (job *Job) wait() {
 	table, err := job.getResultTable()
 	if err != nil {
 		table, err = job.GetResultTableForScript()
-		if err != nil{
+		if err != nil {
 			job.CancelWithError(err)
 			return
 		}
