@@ -35,6 +35,10 @@ func (s Server) sendReportMessage(reportID string, srv proto.Dekart_GetReportStr
 	}
 
 	queries, err := s.getQueries(ctx, datasets)
+	log.Debug().Msgf("Checking queris of report id %s", reportID)
+	for i := 0; i < len(queries); i++ {
+		log.Debug().Msgf("Got query with id %s and status %d", queries[i].Id, queries[i].JobStatus)
+	}
 	if err != nil {
 		log.Err(err).Msg("Cannot retrieve queries")
 		return status.Errorf(codes.Internal, err.Error())

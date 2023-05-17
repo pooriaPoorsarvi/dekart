@@ -7,17 +7,17 @@ import (
 	"dekart/src/server/utils"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	GcpOauth "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
-	"os"
-	"strings"
-	"time"
 )
 
-
-func (s Server) checkTokenScopes(conf *oauth2.Config, service *GcpOauth.Service, tok *oauth2.Token) (error){
+func (s Server) checkTokenScopes(conf *oauth2.Config, service *GcpOauth.Service, tok *oauth2.Token) error {
 	tokenInfo, err := service.Tokeninfo().AccessToken(tok.AccessToken).Do()
 	if err != nil {
 		log.Info().Msgf("Failed to check token info: %v", err)
@@ -53,19 +53,16 @@ func (s Server) SaveToken(code string, state string) error {
 		return err
 	}
 
-
 	err = s.checkTokenScopes(conf, service, tok)
-	if err != nil{
+	if err != nil {
 		return err
 	}
-
 
 	userInfo, err := service.Userinfo.Get().Do()
 	if err != nil {
 		log.Print("got user error", err.Error())
 		return err
 	}
-
 
 	sqlStatement := `INSERT INTO user_token (id, access_token, refresh_token, expiry, token_type)
                      VALUES ($1, $2, $3, $4, $5)`
@@ -80,7 +77,6 @@ func (s Server) SaveToken(code string, state string) error {
 	return nil
 }
 
-
 func contains(scopes []string, scope string) bool {
 	for _, s := range scopes {
 		if s == scope {
@@ -91,6 +87,7 @@ func contains(scopes []string, scope string) bool {
 }
 
 var RetrievalNotSupported = errors.New("unknown email is not supported for token retrieval please use SA mode instead")
+
 func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 
 	if userEmail == user.UnknownEmail {
@@ -121,10 +118,8 @@ func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 		log.Info().Msgf(err.Error())
 	}
 
-
-
 	// Use the refresh token to obtain a new access token
-	var newToken * oauth2.Token
+	var newToken *oauth2.Token
 	remainingTime := userToken.Expiry.Sub(time.Now())
 	if remainingTime < 1*time.Hour {
 		tokenSource := conf.TokenSource(ctx, &oauth2.Token{RefreshToken: userToken.RefreshToken})
@@ -143,7 +138,7 @@ func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 			return nil, err
 		}
 
-	}else{
+	} else {
 		newToken = &oauth2.Token{
 			AccessToken:  userToken.AccessToken,
 			RefreshToken: userToken.RefreshToken,
@@ -162,7 +157,7 @@ func (s Server) RetrieveToken(userEmail string) (*oauth2.Token, error) {
 		return nil, err
 	}
 	err = s.checkTokenScopes(conf, service, newToken)
-	if err != nil{
+	if err != nil {
 		log.Err(err)
 		s.deleteToken(userEmail) // remove the invalid token from the database
 		return nil, err
@@ -180,7 +175,6 @@ func (s Server) deleteToken(userEmail string) {
 	}
 }
 
-func ShouldUseTokens() bool{
+func ShouldUseTokens() bool {
 	return os.Getenv("DEKART_DATASOURCE_CLIENT") == "API"
 }
-

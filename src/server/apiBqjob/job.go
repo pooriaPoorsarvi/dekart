@@ -169,9 +169,11 @@ func (job *Job) getResultTable() (*bigquery.Table, error) {
 
 func (job *Job) wait() {
 
+	job.Logger.Debug().Msg("running job")
 	newJobInfo, err := job.client.Jobs.Get(job.bigqueryJob.JobReference.ProjectId, job.bigqueryJob.JobReference.JobId).Do()
 	for {
 		job.bigqueryJob, err = job.client.Jobs.Get(job.bigqueryJob.JobReference.ProjectId, job.bigqueryJob.JobReference.JobId).Do()
+		newJobInfo = job.bigqueryJob
 		if err != nil {
 			break
 		}
@@ -188,14 +190,19 @@ func (job *Job) wait() {
 	queryStatus := newJobInfo
 
 	if err == context.Canceled {
+		job.Logger.Debug().Msg("Job has been canceled")
 		return
 	}
 	if err != nil {
+		job.Logger.Debug().Msg("Job has finished with an error")
+		job.Logger.Debug().Msg(err.Error())
 		job.processApiErrors(err)
 		job.CancelWithError(err)
 		return
 	}
 	if queryStatus.Status == nil {
+		job.Logger.Debug().Msg("Job has finished with an error")
+		job.Logger.Debug().Msg("queryStatus == nil")
 		job.CancelWithError(errors.New("queryStatus == nil"))
 		job.Logger.Fatal().Msgf("queryStatus == nil")
 	}
@@ -204,23 +211,34 @@ func (job *Job) wait() {
 		for i := 0; i < len(queryStatus.Status.Errors); i++ {
 			errorsString = append(errorsString, queryStatus.Status.Errors[i].Reason+" : "+queryStatus.Status.Errors[i].Message)
 		}
-		job.CancelWithError(errors.New(strings.Join(errorsString, ",")))
+		err = errors.New(strings.Join(errorsString, ","))
+
+		job.Logger.Debug().Msg("Job has finished with an error")
+		job.Logger.Debug().Msg(err.Error())
+
+		job.CancelWithError(err)
 		return
 	}
 
 	table, err := job.getResultTable()
 	if err != nil {
+		job.Logger.Debug().Msg("Job has finished with an error when getting the table")
+		job.Logger.Debug().Msg(err.Error())
 		job.CancelWithError(err)
 		return
 	}
 
 	err = job.setJobStats(queryStatus, table)
 	if err != nil {
+		job.Logger.Debug().Msg("Job has finished with an error when setting job status")
+		job.Logger.Debug().Msg(err.Error())
 		job.CancelWithError(err)
 		return
 	}
 
 	job.Status() <- int32(proto.Query_JOB_STATUS_READING_RESULTS)
+
+	job.Logger.Debug().Msg("Job status has finished")
 
 	csvRows := make(chan []string, job.TotalRows)
 	errors := make(chan error)
@@ -294,6 +312,8 @@ func (job *Job) Run(storageObject storage.StorageObject) error {
 		job.Cancel()
 		return err
 	}
+	job.Logger.Debug().Msg("Made bigquery job")
+	job.Logger.Debug().Msg(bigqueryJob.Id)
 	job.Lock()
 	job.bigqueryJob = bigqueryJob
 	job.storageObject = storageObject

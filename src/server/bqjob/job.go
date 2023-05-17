@@ -257,6 +257,7 @@ func (job *Job) Run(storageObject storage.StorageObject) error {
 	job.client = client
 
 	query := client.Query(job.QueryText)
+	query.UseLegacySQL = false
 	// TODO : Remove maxbytes billed for now, check later
 	// query.MaxBytesBilled = job.maxBytesBilled
 
