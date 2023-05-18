@@ -13,10 +13,11 @@ athena:
 		-e DEKART_CLOUD_STORAGE_BUCKET=${DEKART_CLOUD_STORAGE_BUCKET} \
 		-e DEKART_ATHENA_CATALOG=${DEKART_ATHENA_CATALOG} \
 		-e DEKART_ATHENA_S3_OUTPUT_LOCATION=${DEKART_ATHENA_S3_OUTPUT_LOCATION} \
+		-e DEKART_ATHENA_WORKGROUP=${DEKART_ATHENA_WORKGROUP} \
 		-e DEKART_MAPBOX_TOKEN=${DEKART_MAPBOX_TOKEN} \
 		-e DEKART_CORS_ORIGIN=${DEKART_CORS_ORIGIN} \
 		-p 8080:8080 \
-		dekartxyz/dekart:0.12
+		dekartxyz/dekart:0.13
 
 bigquery:
 	docker run -it --rm \
@@ -35,7 +36,7 @@ bigquery:
 		-e DEKART_MAPBOX_TOKEN=${DEKART_MAPBOX_TOKEN} \
 		-e DEKART_CORS_ORIGIN=${DEKART_CORS_ORIGIN} \
 		-p 8080:8080 \
-		dekartxyz/dekart:0.12
+		dekartxyz/dekart:0.13
 
 snowflake:
 	docker run -it --rm \
@@ -56,5 +57,5 @@ snowflake:
 		-e DEKART_MAPBOX_TOKEN=${DEKART_MAPBOX_TOKEN} \
 		-e DEKART_CORS_ORIGIN=${DEKART_CORS_ORIGIN} \
 		-p 8080:8080 \
-		dekartxyz/dekart:0.12
+		dekartxyz/dekart:0.13
 

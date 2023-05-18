@@ -1,20 +1,25 @@
 # Dekart Docker image
-Dekart provides WebGL-powered map visualization capabilities for modern data warehouses with a focus on large-scale IoT datasets. Dekart is an open-source project and you can run it on your infrastructure.
+Dekart is open-source WebGL-powered map visualization and spatial analytics for modern data warehouses. It offers self-hosted alternative to CARTO and Foursquare Studio. We build it for data scientists, analysts, GIS professionals, and developers who need to visualize large datasets on a map.
 
 [Home Page](https://dekart.xyz?ref=dokerhub) | [GitHub](https://github.com/dekart/dekart?ref=dokerhub)
 
 ## Features
 
-* Create beautiful, fast WebGL map visualizations with SQL
-* Optimized for large query results, benchmarked at 1M+ points
-* Easy to save a map and share a link with your team
-* Optimized for hosting in the cloud
+Create beautiful data-driven maps and share them with your team:
 
-## Supported data warehouses
+* State-of-the art WebGL-powered map visualization for Snowflake, BigQuery and Amazon Athena
+* Optimized for large query results, tested 100Mb/1M rows
+* Efficient query result caching on Amazon S3 or Google Cloud Storage
+* Side-by-side SQL editor and support for CSV and GeoJSON file uploads
+* Simple Docker-based deployment with native support for Amazon Cognito and Google IAP and AWS/GCP/Terraform examples
 
-* Amazon Athena
-* Google BigQuery
-* Snowflake
+## Available data sources
+
+* Snowflake ❄️
+* BigQuery
+* AWS Athena
+* CSV (file upload)
+* GeoJSON (file upload)
 
 ## Requirements
 
@@ -41,10 +46,11 @@ docker run \
   -e DEKART_CLOUD_STORAGE_BUCKET=${DEKART_CLOUD_STORAGE_BUCKET} \
   -e DEKART_ATHENA_CATALOG=${DEKART_ATHENA_CATALOG} \
   -e DEKART_ATHENA_S3_OUTPUT_LOCATION=${DEKART_ATHENA_S3_OUTPUT_LOCATION} \
+  -e DEKART_ATHENA_WORKGROUP=${DEKART_ATHENA_WORKGROUP} \
   -e DEKART_MAPBOX_TOKEN=${DEKART_MAPBOX_TOKEN} \
   -e DEKART_CORS_ORIGIN=${DEKART_CORS_ORIGIN} \
   -p 8080:8080 \
-  dekartxyz/dekart:0.12
+  dekartxyz/dekart:0.13
 ```
 
 ### BigQuery
@@ -65,7 +71,7 @@ docker run \
   -e DEKART_MAPBOX_TOKEN=${DEKART_MAPBOX_TOKEN} \
   -e DEKART_CORS_ORIGIN=${DEKART_CORS_ORIGIN} \
   -p 8080:8080 \
-  dekartxyz/dekart:0.12
+  dekartxyz/dekart:0.13
 ```
 
 ### Snowflake
@@ -89,7 +95,7 @@ docker run -it --rm \
   -e DEKART_MAPBOX_TOKEN=${DEKART_MAPBOX_TOKEN} \
   -e DEKART_CORS_ORIGIN=${DEKART_CORS_ORIGIN} \
   -p 8080:8080 \
-  dekartxyz/dekart:0.12
+  dekartxyz/dekart:0.13
 ```
 
 [Documentation](https://dekart.xyz/docs/?ref=dokerhub)
