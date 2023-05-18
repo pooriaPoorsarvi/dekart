@@ -143,7 +143,11 @@ export function downloadDataset (dataset, sourceId, extension, label) {
         
         config.config.visState.layers = config.config.visState.layers.filter(layer => layer.config.dataId === dataset.id);          
         config.config.visState.filters = config.config.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
-        config.configvisState.interactionConfig=null;
+        
+        if(config.config.visState.interactionConfig.tooltip.fieldsToShow[dataset.id]){
+          delete config.config.visState.interactionConfig[dataset.id];
+        }
+
         // remove dataset
         dispatch(removeDatasetFromKepler(dataset.id))
 
