@@ -277,8 +277,6 @@ function httpErrorStatus (state = 0, action) {
 }
 
 function downloadingDatasets (state = [], action) {
-  console.log("action:");
-  console.log(action);
   const { dataset } = action
   switch (action.type) {
     case downloading.name:

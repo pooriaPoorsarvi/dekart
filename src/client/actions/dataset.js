@@ -140,9 +140,9 @@ export function downloadDataset (dataset, sourceId, extension, label) {
 
         // receive config
         const config = KeplerGlSchema.getConfigToSave(keplerGl.kepler)
-
-        config.visState.layers = config.visState.layers.filter(layer => layer.config.dataId === dataset.id);
-        config.visState.filters = config.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
+        
+        config.config.visState.layers = config.config.visState.layers.filter(layer => layer.config.dataId === dataset.id);          
+        config.config.visState.filters = config.config.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
 
         // remove dataset
         dispatch(removeDatasetFromKepler(dataset.id))
@@ -155,6 +155,9 @@ export function downloadDataset (dataset, sourceId, extension, label) {
               id: dataset.id
             },
             data
+          },
+          options: {
+            keepExistingConfig: true
           },
           config
         }))
