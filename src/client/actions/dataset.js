@@ -145,7 +145,7 @@ export function downloadDataset (dataset, sourceId, extension, label) {
         config.config.visState.filters = config.config.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
         
         if(config.config.visState.interactionConfig.tooltip.fieldsToShow[dataset.id]){
-          delete config.config.visState.interactionConfig[dataset.id];
+          delete config.config.visState.interactionConfig.tooltip.fieldsToShow[dataset.id];
         }
 
         // remove dataset
