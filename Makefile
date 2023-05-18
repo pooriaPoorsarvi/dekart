@@ -39,7 +39,9 @@ nodetest:
 gotest:
 	docker buildx build -f ./Dockerfile --target gotest .
 
-e2ebq:
+e2e: bq athena snowflake
+	
+bq:
 	docker buildx build --tag ${DEKART_DOCKER_E2E_TAG} -o type=image -f ./Dockerfile --target e2etest .
 	docker run -it --rm \
 	-v ${GOOGLE_APPLICATION_CREDENTIALS}:${GOOGLE_APPLICATION_CREDENTIALS} \
@@ -60,7 +62,7 @@ e2ebq:
 	-e TEST_SPEC=cypress/e2e/bq \
 	${DEKART_DOCKER_E2E_TAG}
 
-e2eathena:
+athena:
 	docker buildx build --tag ${DEKART_DOCKER_E2E_TAG} -o type=image -f ./Dockerfile --target e2etest .
 	docker run -it --rm \
 	-v $$(pwd)/cypress/videos:/dekart/cypress/videos/ \
@@ -77,6 +79,7 @@ e2eathena:
 	-e DEKART_CLOUD_STORAGE_BUCKET=${DEKART_CLOUD_STORAGE_BUCKET} \
 	-e DEKART_ATHENA_S3_OUTPUT_LOCATION=${DEKART_ATHENA_S3_OUTPUT_LOCATION} \
 	-e DEKART_ATHENA_CATALOG=${DEKART_ATHENA_CATALOG} \
+	-e DEKART_ATHENA_WORKGROUP=${DEKART_ATHENA_WORKGROUP} \
 	-e AWS_REGION=${AWS_REGION} \
 	-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 	-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
@@ -86,7 +89,7 @@ e2eathena:
 	${DEKART_DOCKER_E2E_TAG}
 
 
-e2esnowflake:
+snowflake:
 	docker buildx build --tag ${DEKART_DOCKER_E2E_TAG} -o type=image -f ./Dockerfile --target e2etest .
 	docker run -it --rm \
 	-v ${GOOGLE_APPLICATION_CREDENTIALS}:${GOOGLE_APPLICATION_CREDENTIALS} \
@@ -140,6 +143,10 @@ prerelease:
 	npm version prerelease --preid=rc
 preminor:
 	npm version preminor --preid=rc
+premajor:
+	npm version premajor --preid=rc
+prepatch:
+	npm version prepatch --preid=rc
 version:
 	npm version $(MAKECMDGOALS)
 minor: version

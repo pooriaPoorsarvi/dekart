@@ -5,14 +5,13 @@ import { downloading, error, finishDownloading, success, slowDownLimit, alertLim
 import {
   addDataToMap,
   toggleSidePanel,
-  removeDataset as keplerRemove,
+  removeDataset as removeDatasetFromKepler,
   receiveMapConfig,
   loadFiles
 } from 'kepler.gl/dist/actions'
 import { processCsvData, processGeojson } from 'kepler.gl/dist/processors'
 import { get } from '../lib/api'
 import { KeplerGlSchema } from 'kepler.gl/dist/schemas'
-
 
 export function createDataset (reportId) {
   return (dispatch) => {
@@ -87,6 +86,7 @@ export function loadFileStarted (dataset, sourceId, extension, label) {
   }
 }
 
+const addedDatasets = []
 
 export function downloadDataset (dataset, sourceId, extension, label) {
   return async (dispatch, getState) => {
@@ -128,56 +128,49 @@ export function downloadDataset (dataset, sourceId, extension, label) {
       dispatch(error(err))
       return
     }
-    const { datasets } = getState()
+    const { datasets, keplerGl } = getState()
     const i = datasets.findIndex(d => d.id === dataset.id)
     if (i < 0) {
       return
     }
     try {
+      if (addedDatasets.includes(dataset.id)) {
+        // kepler does not update datasets correctly
+        // so we have to remove and add again
 
-      // TODO : remove the following retrieval of current stage on the fixing of kepler bug
-      const { keplerGl } = getState()
-      const visState = keplerGl['kepler'].visState;
-      const datasetLayer = visState.layers.find(layer => layer.config.dataId === dataset.id);
+        // receive config
+        const config = KeplerGlSchema.getConfigToSave(keplerGl.kepler)
 
+        // remove dataset
+        dispatch(removeDatasetFromKepler(dataset.id))
 
-      dispatch(keplerRemove(dataset.id))
-
-
-      // TODO : remove the following retrieval of current stage on the fixing of kepler bug
-      if (datasetLayer){
-        // Changes required for keeping the in memory changes of kepler
-        let cK = localStorage.getItem("keplerConfig");
-        if( cK && cK !=="undefined" ){
-          const parsedConfig = KeplerGlSchema.parseSavedConfig(JSON.parse(cK));
-          // console.log("configs are:");
-          // console.log(parsedConfig.visState);
-          let new_config =  KeplerGlSchema.parseSavedConfig(JSON.parse(JSON.stringify(KeplerGlSchema.getConfigToSave(keplerGl.kepler))));
-          // console.log(new_config);
-          parsedConfig.visState.layers = parsedConfig.visState.layers.filter(layer => layer.config.dataId === dataset.id);
-          parsedConfig.visState.filters = parsedConfig.visState.filters.filter(filter => filter.dataId.filter(id => id === dataset.id).length > 0);
-          // console.log("parsedConfig");
-          // console.log(parsedConfig);
-          parsedConfig.visState.interactionConfig = new_config.interactionConfig;
-
-          dispatch(receiveMapConfig(parsedConfig, {keepExistingConfig: true}));
-        }
-      }
-
-      await dispatch(addDataToMap({
-        datasets: {
-          info: {
-            label,
-            id: dataset.id
+        // add dataset with previous config
+        dispatch(addDataToMap({
+          datasets: {
+            info: {
+              label,
+              id: dataset.id
+            },
+            data
           },
-          data
-        }
-      }))
-
+          config
+        }))
+      } else {
+        dispatch(addDataToMap({
+          datasets: {
+            info: {
+              label,
+              id: dataset.id
+            },
+            data
+          }
+        }))
+        addedDatasets.push(dataset.id)
+      }
+      
       if (data.rows.length > slowDownLimit){
         dispatch(alertLimit(data.rows.length, dataset.id));
       }
-
     } catch (err) {
       console.log(err)
       dispatch(error(
