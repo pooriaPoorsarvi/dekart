@@ -46,8 +46,8 @@ export function removeDataset (datasetId) {
     }
     dispatch({ type: removeDataset.name, datasetId })
     let csvId = datasetId + ".csv";
-    dispatch(keplerRemove(csvId))
-    dispatch(keplerRemove(datasetId))
+    dispatch(removeDatasetFromKepler(csvId))
+    dispatch(removeDatasetFromKepler(datasetId))
 
 
     const request = new RemoveDatasetRequest()
